@@ -6,9 +6,10 @@ import { Key } from '@ecs/plugins/input/Control';
 import Keyboard from '@ecs/plugins/input/Keyboard';
 import Transform from '@ecs/plugins/math/Transform';
 import Sprite from '@ecs/plugins/render/2d/components/Sprite';
+import { Movement } from './PlayerMovementSystem';
 
 export class PlayerControlSystem extends System {
-	readonly PLAYER_SPEED = 0.3;
+	readonly PLAYER_SPEED = 0.2;
 
 	protected inputs = useState(
 		this,
@@ -22,18 +23,20 @@ export class PlayerControlSystem extends System {
 	);
 
 	protected queries = useQueries(this, {
-		player: all(Transform, Sprite)
+		player: all(Transform, Sprite, Movement)
 	})
 
 	update(dt: number) {
 		for (const player of this.queries.player) {
-			const { position } = player.get(Transform);
+			const { velocity } = player.get(Movement);
 
-			if(this.inputs.state.right.down) position.x += this.PLAYER_SPEED * dt;
-			if(this.inputs.state.left.down) position.x -= this.PLAYER_SPEED * dt;
+			velocity.set(0, 0, 0);
 
-			if(this.inputs.state.up.down) position.y -= this.PLAYER_SPEED * dt;
-			if(this.inputs.state.down.down) position.y += this.PLAYER_SPEED * dt;
+			if(this.inputs.state.right.down) velocity.x += this.PLAYER_SPEED;
+			if(this.inputs.state.left.down) velocity.x -= this.PLAYER_SPEED;
+
+			if(this.inputs.state.up.down) velocity.y -= this.PLAYER_SPEED;
+			if(this.inputs.state.down.down) velocity.y += this.PLAYER_SPEED;
 		}
 	}
 }

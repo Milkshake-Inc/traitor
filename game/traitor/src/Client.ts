@@ -7,6 +7,8 @@ import { PixiEngine } from '@ecs/plugins/render/2d/PixiEngine';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
+import { PlayerAnimationSystem, AnimatedPlayer } from './systems/PlayerAnimationSystem';
+import { PlayerMovementSystem, Movement } from './systems/PlayerMovementSystem';
 
 const Assets = {
 	Background: 'assets/player.json',
@@ -20,10 +22,14 @@ export class ClientTraitor extends Space {
 	setup() {
 		this.addSystem(new InputSystem())
 		this.addSystem(new PlayerControlSystem());
+		this.addSystem(new PlayerMovementSystem());
+		this.addSystem(new PlayerAnimationSystem())
 
 		const background = new Entity();
         background.add(Transform);
 		background.add(Sprite, { imageUrl: 'idle-1.png' });
+		background.add(Movement);
+		background.add(AnimatedPlayer);
 		this.addEntities(background);
 	}
 }
