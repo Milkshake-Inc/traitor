@@ -9,7 +9,7 @@ import Sprite from '@ecs/plugins/render/2d/components/Sprite';
 import { Movement } from './PlayerMovementSystem';
 
 export class PlayerControlSystem extends System {
-	readonly PLAYER_SPEED = 0.2;
+	readonly PLAYER_SPEED = 0.3;
 
 	protected inputs = useState(
 		this,
