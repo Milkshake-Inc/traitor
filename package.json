@@ -3,14 +3,8 @@
 	"version": "1.0.0",
 	"license": "BSD-3-Clause",
 	"scripts": {
-		"build": "rm -rf ./bin && yarn build:client && yarn build:server",
-		"build:client": "webpack --config webpack.client.js",
-		"build:server": "webpack --config webpack.server.js",
-		"commit": "yarn lint && git-cz",
 		"lint": "prettier --write src/**/*.ts && eslint --fix src/**/*.ts",
-		"start": "webpack --config webpack.dev.js --watch --info-verbosity none",
-		"watch:client": "webpack --config webpack.client.js --watch",
-		"watch:server": "webpack --config webpack.server.js --watch"
+		"start": "node ./ecs/src/cli/index.js"
 	},
 	"config": {
 		"commitizen": {
