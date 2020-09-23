@@ -5,12 +5,11 @@ import Color from '@ecs/plugins/math/Color';
 import Transform from '@ecs/plugins/math/Transform';
 import Vector3 from '@ecs/plugins/math/Vector';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
-import Sprite from '@ecs/plugins/render/2d/components/Sprite';
 import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSystem';
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
-import { Loader } from 'pixi.js';
+import { Loader, Sprite } from 'pixi.js';
 import { usePolygonDebugCouple } from './couple/usePolygonDebugCouple';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
@@ -18,7 +17,6 @@ import { Movement, PlayerMovementSystem } from './systems/PlayerMovementSystem';
 import { PolygonShapeData } from './components/PolygonData';
 import { convertToPolygonShape, convertToLines } from './utils/PolygonUtils';
 import { PolygonFile } from './utils/PolygonFile';
-import { BasicLightingSystem } from './systems/BasicLightingSystem';
 
 const Assets = {
 	Background: 'assets/player.json',
@@ -46,13 +44,12 @@ export class ClientTraitor extends Space {
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerMovementSystem());
 		this.addSystem(new PlayerAnimationSystem());
-		this.addSystem(new BasicLightingSystem());
 
 		const ship = new Entity();
 		ship.add(Transform, {
 			// scale: Vector3.EQUAL(0.8),
 		});
-		ship.add(Sprite, { imageUrl: Assets.Ship, anchor: Vector3.ZERO });
+		ship.add(Sprite.from(Assets.Ship));
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
@@ -62,7 +59,7 @@ export class ClientTraitor extends Space {
 
 		const background = new Entity();
 		background.add(Transform);
-		background.add(Sprite, { imageUrl: 'idle-1.png' });
+		background.add(Sprite.from('idle-1.png'));
 		background.add(Movement);
 		background.add(Camera, { offset: new Vector3(0, 0) });
 		background.add(AnimatedPlayer);

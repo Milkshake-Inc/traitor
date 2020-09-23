@@ -2,8 +2,8 @@ import { useQueries } from '@ecs/core/helpers';
 import { all } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
 import Transform from '@ecs/plugins/math/Transform';
-import Sprite from '@ecs/plugins/render/2d/components/Sprite';
 import { Movement } from './PlayerMovementSystem';
+import { Sprite, Texture } from 'pixi.js';
 
 export class AnimatedPlayer {
     elapsedTime = 0;
@@ -26,8 +26,6 @@ export class PlayerAnimationSystem extends System {
 	protected queries = useQueries(this, {
 		players: all(Transform, Sprite, AnimatedPlayer, Movement)
 	})
-
-
 
 	update(dt: number) {
 
@@ -64,7 +62,8 @@ export class PlayerAnimationSystem extends System {
 
                 const imageUrl = `${animatedPlayer.currentAnimation}-${animatedPlayer.currentFrame + 1}.png`;
 
-                player.get(Sprite).imageUrl = imageUrl;
+                player.get(Sprite).texture = Texture.from(imageUrl);
+                // displayObject.
             }
 
 		}

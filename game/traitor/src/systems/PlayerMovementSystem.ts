@@ -3,7 +3,7 @@ import { all } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
 import Transform from '@ecs/plugins/math/Transform';
 import Vector3 from '@ecs/plugins/math/Vector';
-import Sprite from '@ecs/plugins/render/2d/components/Sprite';
+import { Sprite } from 'pixi.js';
 
 export class Movement {
 	velocity: Vector3 = Vector3.ZERO;

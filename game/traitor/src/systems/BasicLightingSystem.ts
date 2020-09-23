@@ -5,7 +5,7 @@ import { all, not } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
 import Color from '@ecs/plugins/math/Color';
 import Transform from '@ecs/plugins/math/Transform';
-import { Graphics } from 'pixi.js';
+import { Graphics, Geometry, SimpleMesh, Container, Mesh, DRAW_MODES } from 'pixi.js';
 import { PolygonShapeData } from '../components/PolygonData';
 import { convertToLines } from '../utils/PolygonUtils';
 import { Movement } from './PlayerMovementSystem';
@@ -61,10 +61,12 @@ export class BasicLightingSystem extends System {
 
 	protected graphics = useEntity(this, entity => {
 		entity.add(Transform, { z: 1 });
-		entity.add(Graphics);
+		entity.add(Container);
 	});
 
 	update(dt: number) {
+
+
 		let lines = [];
 		const points = [];
 
@@ -79,19 +81,56 @@ export class BasicLightingSystem extends System {
 
 		const lightPosition = this.queries.player.first.get(Transform);
 
-		const angles = [];
+		const angles: Set<number> = new Set();
 		points.forEach(line => {
 			const angleA = Math.atan2(line.y - lightPosition.y, line.x - lightPosition.x);
 
-			angles.push(angleA);
-			angles.push(angleA - 0.00001);
-			angles.push(angleA + 0.00001);
+			angles.add(angleA);
+			angles.add(angleA - 0.00001);
+			angles.add(angleA + 0.00001);
 		});
 
-		const graphics = this.graphics.get(Graphics);
+        const containers = this.graphics.get(Container);
+        if(!containers.children[0]) {
+            const shader = PIXI.Shader.from(`
 
-		graphics.clear();
-		graphics.lineStyle(2, Color.YellowGreen);
+    precision mediump float;
+    attribute vec2 aVertexPosition;
+
+    uniform mat3 translationMatrix;
+    uniform mat3 projectionMatrix;
+
+    void main() {
+        gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+    }`,
+
+`precision mediump float;
+
+    void main() {
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+
+`);
+            const geom = new Geometry()
+            geom.addAttribute('aVertexPosition', []);
+
+			const mesho = new Mesh(geom, shader, undefined, DRAW_MODES.TRIANGLE_STRIP);
+			mesho.interactive = false;
+			mesho.interactiveChildren = false;
+            containers.addChild(mesho);
+            console.log("Craeate mesh");
+
+            const gfx = new Graphics();
+            gfx.beginFill(0, 1);
+            gfx.drawRect(0, 0, 10000, 10000);
+            gfx.mask = mesho;
+            containers.addChild(gfx)
+        }
+
+
+
+		// graphics.clear();
+		// graphics.lineStyle(2, Color.YellowGreen);
 
 		const intersects = [];
 
@@ -121,14 +160,31 @@ export class BasicLightingSystem extends System {
 
 		const orderedIntersects = intersects.sort(function (a, b) {
 			return a.angle - b.angle;
-		});
+        });
 
-		graphics.beginFill(0xffffff, 0.2);
-		graphics.moveTo(orderedIntersects[0].x, orderedIntersects[0].y);
-		orderedIntersects.forEach(i => {
-			graphics.lineTo(i.x, i.y);
-		});
+        const verts: number[] = []
+        const indies = [];
 
-		graphics.lineTo(orderedIntersects[0].x, orderedIntersects[0].y);
+
+        let index = 0;
+        orderedIntersects.forEach(i => {
+            verts.push(i.x);
+            verts.push(i.y);
+
+            verts.push(lightPosition.x);
+            verts.push(lightPosition.y);
+
+            indies.push(index++)
+        });
+
+        // verts.push(i.x);
+		verts.push(orderedIntersects[0].x, orderedIntersects[0].y);
+
+		// verts.push(-100, -100);
+
+        const mesh: Mesh = containers.children[0] as Mesh;
+        mesh.geometry.getBuffer('aVertexPosition').update(new Float32Array(verts))
+
+		// graphics.lineTo(orderedIntersects[0].x, orderedIntersects[0].y);
 	}
 }

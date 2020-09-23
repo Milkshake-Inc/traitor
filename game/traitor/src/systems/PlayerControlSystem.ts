@@ -5,8 +5,8 @@ import Input from '@ecs/plugins/input/components/Input';
 import { Key } from '@ecs/plugins/input/Control';
 import Keyboard from '@ecs/plugins/input/Keyboard';
 import Transform from '@ecs/plugins/math/Transform';
-import Sprite from '@ecs/plugins/render/2d/components/Sprite';
 import { Movement } from './PlayerMovementSystem';
+import { Sprite } from 'pixi.js';
 
 export class PlayerControlSystem extends System {
 	readonly PLAYER_SPEED = 0.3;
