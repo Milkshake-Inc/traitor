@@ -17,11 +17,13 @@ import { Movement, PlayerMovementSystem } from './systems/PlayerMovementSystem';
 import { PolygonShapeData } from './components/PolygonData';
 import { convertToPolygonShape, convertToLines } from './utils/PolygonUtils';
 import { PolygonFile } from './utils/PolygonFile';
+import { BasicLightingSystem } from './systems/BasicLightingSystem';
 
-const Assets = {
-	Background: 'assets/player.json',
+export const Assets = {
+	Player: 'assets/player.json',
 	Ship: 'assets/prefab.png',
-	ShipCollision: 'assets/ship.json'
+	ShipCollision: 'assets/ship.json',
+	MaskTest: 'assets/mask_test.png'
 };
 
 export class ClientTraitor extends Space {
@@ -44,6 +46,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerMovementSystem());
 		this.addSystem(new PlayerAnimationSystem());
+		this.addSystem(new BasicLightingSystem());
 
 		const ship = new Entity();
 		ship.add(Transform, {
@@ -57,23 +60,25 @@ export class ClientTraitor extends Space {
 		console.log(polygonLines);
 		ship.add(polygonShape);
 
-		const background = new Entity();
-		background.add(Transform);
-		background.add(Sprite.from('idle-1.png'));
-		background.add(Movement);
-		background.add(Camera, { offset: new Vector3(0, 0) });
-		background.add(AnimatedPlayer);
-		background.add(PolygonShapeData, {
+		const player = new Entity();
+		const playerSprite = Sprite.from('idle-1.png');
+		playerSprite.anchor.set(0.5);
+		player.add(Transform);
+		player.add(playerSprite);
+		player.add(Movement);
+		player.add(Camera, { offset: new Vector3(0, 0) });
+		player.add(AnimatedPlayer);
+		player.add(PolygonShapeData, {
 			polygons: [
 				[
-					{ x: 0, y: 0 },
-					{ x: 50, y: 0 },
-					{ x: 50, y: 50 },
-					{ x: 0, y: 50 }
+					{ x: -playerSprite.width / 2, y: -playerSprite.height / 2 },
+					{ x: playerSprite.width / 2, y: -playerSprite.height / 2 },
+					{ x: playerSprite.width / 2, y: playerSprite.height / 2 },
+					{ x: -playerSprite.width / 2, y: playerSprite.height / 2 }
 				]
 			]
 		});
-		this.addEntities(ship, background);
+		this.addEntities(ship, player);
 	}
 }
 
