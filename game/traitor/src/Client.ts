@@ -22,7 +22,7 @@ import { BasicLightingSystem } from './systems/BasicLightingSystem';
 export const Assets = {
 	Player: 'assets/player.json',
 	Ship: 'assets/prefab.png',
-	ShipCollision: 'assets/ship.json',
+	ShipCollision: 'assets/ship_lighting.json',
 	MaskTest: 'assets/mask_test.png'
 };
 
