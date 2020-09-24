@@ -3,13 +3,10 @@ import { useQueries, useSingletonQuery } from '@ecs/core/helpers';
 import { useEntity } from '@ecs/core/helpers/useEntity';
 import { all, not } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
-import Color from '@ecs/plugins/math/Color';
 import Transform from '@ecs/plugins/math/Transform';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
 import PixiRenderState from '@ecs/plugins/render/2d/components/RenderState';
-import { Graphics, Geometry, SimpleMesh, Container, Mesh, DRAW_MODES, Sprite, RenderTexture, BaseRenderTexture, Renderer } from 'pixi.js';
-import { render } from 'preact';
-import { Assets } from '../Client';
+import { BaseRenderTexture, Container, DRAW_MODES, Geometry, Graphics, Mesh, RenderTexture, Shader, Sprite } from 'pixi.js';
 import { PolygonShapeData } from '../components/PolygonData';
 import { convertToLines } from '../utils/PolygonUtils';
 import { Movement } from './PlayerMovementSystem';
@@ -57,6 +54,29 @@ function getIntersection(ray, segment) {
 	};
 }
 
+const LIGHTING_SHADER_VERT = `
+	precision mediump float;
+
+	attribute vec2 aVertexPosition;
+
+	uniform mat3 translationMatrix;
+	uniform mat3 projectionMatrix;
+
+	void main() {
+		gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
+	}
+`;
+
+const LIGHTING_SHADER_FRAG = `
+	precision mediump float;
+
+	void main() {
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+	}
+`;
+
+const LIGHTING_SHADER = Shader.from(LIGHTING_SHADER_VERT, LIGHTING_SHADER_FRAG);
+
 export class BasicLightingSystem extends System {
 	private mesh: Mesh;
 	private renderTexture: RenderTexture;
@@ -71,7 +91,7 @@ export class BasicLightingSystem extends System {
 
 	protected graphics = useEntity(this, entity => {
 		entity.add(Transform, { z: 1 });
-		entity.add(Container, {interactive: false, interactiveChildren: false});
+		entity.add(Container, { interactive: false, interactiveChildren: false });
 	});
 
 	protected getRenderer = useSingletonQuery(this, PixiRenderState);
@@ -80,48 +100,27 @@ export class BasicLightingSystem extends System {
 		super();
 
 		const geometry = new Geometry().addAttribute('aVertexPosition', []);
-		this.mesh = new Mesh(geometry, PIXI.Shader.from(`
+		this.mesh = new Mesh(geometry, LIGHTING_SHADER, undefined, DRAW_MODES.TRIANGLE_FAN);
 
-		precision mediump float;
+		this.mesh.filters = [new PIXI.filters.BlurFilter(4)];
 
-		attribute vec2 aVertexPosition;
+		this.renderTexture = new RenderTexture(new BaseRenderTexture({ width: 1280, height: 720 }));
 
-		uniform mat3 translationMatrix;
-		uniform mat3 projectionMatrix;
-	
-		void main() {
-			gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-		}`,
-	
-	`precision mediump float;
-	
-		void main() {
-			gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-		}
-	
-	`), undefined, DRAW_MODES.TRIANGLE_FAN);
-
-	this.mesh.filters = [new PIXI.filters.BlurFilter(4)];
-		
-		this.renderTexture = new RenderTexture(new BaseRenderTexture({width: 1280, height: 720}));
-		
 		this.clearColor = new Graphics();
-		this.clearColor.beginFill(0xFF0000);
+		this.clearColor.beginFill(0xff0000);
 		this.clearColor.drawRect(0, 0, 1280, 720);
-		
+
 		this.fullscreenCameraSprite = new Sprite(PIXI.Texture.WHITE);
 		this.fullscreenCameraSprite.width = 1280;
 		this.fullscreenCameraSprite.height = 720;
 		this.fullscreenCameraSprite.anchor.set(0.5);
 		this.fullscreenCameraSprite.mask = Sprite.from(this.renderTexture);
-		this.fullscreenCameraSprite.mask.filters = [new PIXI.filters.BlurFilter(50)]
-		this.fullscreenCameraSprite.alpha = 0.5
+		this.fullscreenCameraSprite.alpha = 0.5;
 		this.fullscreenCameraSprite.tint = 0x000000;
 		this.graphics.get(Container).addChild(this.fullscreenCameraSprite);
 	}
 
 	update(dt: number) {
-
 		let lines = [];
 		const points = [];
 
@@ -148,8 +147,8 @@ export class BasicLightingSystem extends System {
 		const intersects = [];
 
 		angles.forEach(angle => {
-			const dx = Math.cos(angle) * 100;
-			const dy = Math.sin(angle) * 100;
+			const dx = Math.cos(angle) * 1000;
+			const dy = Math.sin(angle) * 1000;
 
 			const ray = {
 				a: { x: playerTransform.x, y: playerTransform.y },
@@ -173,21 +172,21 @@ export class BasicLightingSystem extends System {
 
 		const orderedIntersects = intersects.sort(function (a, b) {
 			return a.angle - b.angle;
-        });
+		});
 
-		const verts: number[] = []
+		const verts: number[] = [];
 		verts.push(playerTransform.position.x, playerTransform.position.y);
 
-        orderedIntersects.forEach(i => {
-            verts.push(i.x);
-            verts.push(i.y);
-        });
+		orderedIntersects.forEach(i => {
+			verts.push(i.x);
+			verts.push(i.y);
+		});
 
 		verts.push(orderedIntersects[0].x, orderedIntersects[0].y);
 
 		const camera = this.queries.camera.first.get(Transform);
-		this.mesh.geometry.getBuffer('aVertexPosition').update(new Float32Array(verts))
-		this.mesh.position.set(-camera.position.x + (1280 / 2), -camera.position.y + (720 / 2));
+		this.mesh.geometry.getBuffer('aVertexPosition').update(new Float32Array(verts));
+		this.mesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
 		this.getRenderer().application.renderer.render(this.clearColor, this.renderTexture);
 		this.getRenderer().application.renderer.render(this.mesh, this.renderTexture, false);
