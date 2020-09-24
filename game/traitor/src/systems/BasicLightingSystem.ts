@@ -100,6 +100,8 @@ export class BasicLightingSystem extends System {
 		}
 	
 	`), undefined, DRAW_MODES.TRIANGLE_FAN);
+
+	this.mesh.filters = [new PIXI.filters.BlurFilter(4)];
 		
 		this.renderTexture = new RenderTexture(new BaseRenderTexture({width: 1280, height: 720}));
 		
