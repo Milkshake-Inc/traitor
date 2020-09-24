@@ -124,9 +124,22 @@ export class BasicLightingSystem extends System {
 		let lines = [];
 		const points = [];
 
-		this.queries.polygons.entities.forEach(entity => {
-			const polygonShapeData = entity.get(PolygonShapeData);
+		const camera = this.queries.camera.first.get(Transform);
 
+		const polygonShapeData = this.queries.polygons.entities.map(entity => entity.get(PolygonShapeData));
+
+		const cameraPolygon = new PolygonShapeData();
+		cameraPolygon.polygons = [];
+		cameraPolygon.polygons.push([
+			{ x: camera.x - 1280 / 2, y: camera.y - 720 / 2 },
+			{ x: camera.x + 1280 / 2, y: camera.y - 720 / 2 },
+			{ x: camera.x + 1280 / 2, y: camera.y + 720 / 2 },
+			{ x: camera.x - 1280 / 2, y: camera.y + 720 / 2 }
+		]);
+
+		polygonShapeData.push(cameraPolygon);
+
+		polygonShapeData.forEach(polygonShapeData => {
 			lines.push(...convertToLines(polygonShapeData));
 			points.push(...polygonShapeData.polygons.flat(1));
 		});
@@ -184,7 +197,6 @@ export class BasicLightingSystem extends System {
 
 		verts.push(orderedIntersects[0].x, orderedIntersects[0].y);
 
-		const camera = this.queries.camera.first.get(Transform);
 		this.mesh.geometry.getBuffer('aVertexPosition').update(new Float32Array(verts));
 		this.mesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
