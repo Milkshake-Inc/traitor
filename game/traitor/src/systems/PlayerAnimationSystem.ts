@@ -2,8 +2,8 @@ import { useQueries } from '@ecs/core/helpers';
 import { all } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
 import Transform from '@ecs/plugins/math/Transform';
-import { Movement } from './PlayerMovementSystem';
 import { Sprite, Texture } from 'pixi.js';
+import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics';
 
 export class AnimatedPlayer {
     elapsedTime = 0;
@@ -24,7 +24,7 @@ export const AnimationsData = {
 export class PlayerAnimationSystem extends System {
 
 	protected queries = useQueries(this, {
-		players: all(Transform, Sprite, AnimatedPlayer, Movement)
+		players: all(Transform, Sprite, AnimatedPlayer, ArcadePhysics)
 	})
 
 	update(dt: number) {
@@ -32,7 +32,7 @@ export class PlayerAnimationSystem extends System {
 		for (const player of this.queries.players) {
             const { scale } = player.get(Transform)
             const animatedPlayer = player.get(AnimatedPlayer)
-            const { velocity } = player.get(Movement)
+            const { velocity } = player.get(ArcadePhysics)
 
             animatedPlayer.elapsedTime += dt;
 
@@ -63,7 +63,6 @@ export class PlayerAnimationSystem extends System {
                 const imageUrl = `${animatedPlayer.currentAnimation}-${animatedPlayer.currentFrame + 1}.png`;
 
                 player.get(Sprite).texture = Texture.from(imageUrl);
-                // displayObject.
             }
 
 		}

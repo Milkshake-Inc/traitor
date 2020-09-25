@@ -4,25 +4,31 @@ import { InputSystem } from '@ecs/plugins/input/systems/InputSystem';
 import Color from '@ecs/plugins/math/Color';
 import Transform from '@ecs/plugins/math/Transform';
 import Vector3 from '@ecs/plugins/math/Vector';
+import { ArcadeCollisionShape } from '@ecs/plugins/physics/arcade/components/ArcadeCollisionShape';
+import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics';
+import ArcadeCollisionSystem from '@ecs/plugins/physics/arcade/systems/ArcadeCollisionSystem';
+import ArcadePhysicsSystem from '@ecs/plugins/physics/arcade/systems/ArcadePhysicsSystem';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
 import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSystem';
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
 import { Loader, Sprite } from 'pixi.js';
+import { Light } from './components/Light';
+import { PolygonShapeData } from './components/PolygonData';
+import { ShadowCaster } from './components/ShadowCaster';
 import { usePolygonDebugCouple } from './couple/usePolygonDebugCouple';
+import { BasicLightingSystem } from './systems/BasicLightingSystem';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
-import { Movement, PlayerMovementSystem } from './systems/PlayerMovementSystem';
-import { PolygonShapeData } from './components/PolygonData';
-import { convertToPolygonShape, convertToLines } from './utils/PolygonUtils';
 import { PolygonFile } from './utils/PolygonFile';
-import { BasicLightingSystem } from './systems/BasicLightingSystem';
+import { convertToPolygonShape } from './utils/PolygonUtils';
 
 export const Assets = {
 	Player: 'assets/player.json',
 	Ship: 'assets/prefab.png',
-	ShipCollision: 'assets/ship_lighting.json',
+	ShipLighting: 'assets/ship_lighting.json',
+	ShipCollision: 'assets/ship_collision.json',
 	MaskTest: 'assets/mask_test.png'
 };
 
@@ -36,17 +42,18 @@ export class ClientTraitor extends Space {
 			new RenderSystem(
 				{
 					clearColor: Color.SkyBlue
-				},
-				system => [usePolygonDebugCouple(system)]
+				}
 			)
 		);
 
 		this.addSystem(new CameraRenderSystem());
 		this.addSystem(new InputSystem());
 		this.addSystem(new PlayerControlSystem());
-		this.addSystem(new PlayerMovementSystem());
 		this.addSystem(new PlayerAnimationSystem());
 		this.addSystem(new BasicLightingSystem());
+		this.addSystem(new ArcadeCollisionSystem());
+		this.addSystem(new ArcadePhysicsSystem());
+
 
 		const ship = new Entity();
 		ship.add(Transform, {
@@ -54,30 +61,40 @@ export class ClientTraitor extends Space {
 		});
 		ship.add(Sprite.from(Assets.Ship));
 
-		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
+		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipLighting].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
-		const polygonLines = convertToLines(polygonShape);
-		console.log(polygonLines);
 		ship.add(polygonShape);
+		ship.add(ShadowCaster);
+		// ship.add()
+
+		const shipCollisionPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
+		const collisionPolygonShape = convertToPolygonShape(shipCollisionPolygonFile);
+
+		for (const polygon of collisionPolygonShape.polygons) {
+			const wall = new Entity();
+			wall.add(Transform);
+			wall.add(ArcadeCollisionShape.Polygon(polygon.map(p => new Vector3(p.x, p.y, 0))))
+			wall.add(ArcadePhysics, {
+				isStatic: true
+			})
+			this.addEntity(wall);
+		}
+
+
 
 		const player = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
 		playerSprite.anchor.set(0.5);
-		player.add(Transform);
+		player.add(Transform, {
+			position: new Vector3(400, 400)
+		});
 		player.add(playerSprite);
-		player.add(Movement);
+		player.add(ArcadeCollisionShape.BoxCenter(50, 50));
+		player.add(ArcadePhysics)
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
-		player.add(PolygonShapeData, {
-			polygons: [
-				[
-					{ x: -playerSprite.width / 2, y: -playerSprite.height / 2 },
-					{ x: playerSprite.width / 2, y: -playerSprite.height / 2 },
-					{ x: playerSprite.width / 2, y: playerSprite.height / 2 },
-					{ x: -playerSprite.width / 2, y: playerSprite.height / 2 }
-				]
-			]
-		});
+		player.add(Light);
+
 		this.addEntities(ship, player);
 	}
 }

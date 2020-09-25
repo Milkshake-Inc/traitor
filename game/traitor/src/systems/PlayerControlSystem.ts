@@ -5,8 +5,8 @@ import Input from '@ecs/plugins/input/components/Input';
 import { Key } from '@ecs/plugins/input/Control';
 import Keyboard from '@ecs/plugins/input/Keyboard';
 import Transform from '@ecs/plugins/math/Transform';
-import { Movement } from './PlayerMovementSystem';
 import { Sprite } from 'pixi.js';
+import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics';
 
 export class PlayerControlSystem extends System {
 	readonly PLAYER_SPEED = 0.3;
@@ -23,12 +23,12 @@ export class PlayerControlSystem extends System {
 	);
 
 	protected queries = useQueries(this, {
-		player: all(Transform, Sprite, Movement)
+		player: all(Transform, Sprite, ArcadePhysics)
 	})
 
 	update(dt: number) {
 		for (const player of this.queries.player) {
-			const { velocity } = player.get(Movement);
+			const { velocity } = player.get(ArcadePhysics);
 
 			velocity.set(0, 0, 0);
 
