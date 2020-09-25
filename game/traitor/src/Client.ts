@@ -23,6 +23,7 @@ import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimation
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
+import { ArcadePhysicsDebugger } from './systems/PolygonRendererSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -50,14 +51,15 @@ export class ClientTraitor extends Space {
 		this.addSystem(new InputSystem());
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerAnimationSystem());
-		this.addSystem(new BasicLightingSystem());
+		// this.addSystem(new BasicLightingSystem());
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new ArcadePhysicsSystem());
+		this.addSystem(new ArcadePhysicsDebugger())
 
 		const randomLight = new Entity();
 		randomLight.add(Transform, {
-			x: 400,
-			y: 600
+			x: 0,
+			y: 0
 		});
 		randomLight.add(Light);
 		this.addEntity(randomLight);
@@ -77,26 +79,32 @@ export class ClientTraitor extends Space {
 		const shipCollisionPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const collisionPolygonShape = convertToPolygonShape(shipCollisionPolygonFile);
 
-		for (const polygon of collisionPolygonShape.polygons) {
-			const wall = new Entity();
+		// for (const polygon of collisionPolygonShape.polygons) {
+		// 	const wall = new Entity();
+		// 	wall.add(Transform);
+		// 	wall.add(ArcadeCollisionShape.Polygon(polygon.map(p => new Vector3(p.x, p.y, 0))))
+		// 	wall.add(ArcadePhysics, {
+		// 		isStatic: true
+		// 	})
+		// 	this.addEntity(wall);
+		// }
+		const wall = new Entity();
 			wall.add(Transform);
-			wall.add(ArcadeCollisionShape.Polygon(polygon.map(p => new Vector3(p.x, p.y, 0))))
+			wall.add(ArcadeCollisionShape.Box(50, 50))
 			wall.add(ArcadePhysics, {
 				isStatic: true
 			})
 			this.addEntity(wall);
-		}
-
 
 
 		const player = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
 		playerSprite.anchor.set(0.5);
 		player.add(Transform, {
-			position: new Vector3(400, 400)
+			position: new Vector3(0, 0)
 		});
 		player.add(playerSprite);
-		player.add(ArcadeCollisionShape.BoxCenter(50, 50));
+		player.add(ArcadeCollisionShape.Circle(25));
 		player.add(ArcadePhysics)
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
