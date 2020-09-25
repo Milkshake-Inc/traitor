@@ -8,13 +8,29 @@ import Camera from '@ecs/plugins/render/2d/components/Camera';
 import PixiRenderState from '@ecs/plugins/render/2d/components/RenderState';
 // import { Movement } from './PlayerMovementSystem';
 import Gsap from 'gsap';
-import { BaseRenderTexture, Container, DRAW_MODES, Geometry, Graphics, Mesh, MeshMaterial, Program, Rectangle, RenderTexture, Sprite, Texture } from 'pixi.js';
+import {
+	BaseRenderTexture,
+	Container,
+	DRAW_MODES,
+	Geometry,
+	Graphics,
+	Mesh,
+	MeshMaterial,
+	Program,
+	Rectangle,
+	RenderTexture,
+	Sprite,
+	Texture
+} from 'pixi.js';
 import { Light } from '../components/Light';
 import { PolygonShapeData } from '../components/PolygonData';
 import { ShadowCaster } from '../components/ShadowCaster';
-import { convertToLines } from '../utils/PolygonUtils';
-import LIGHTING_SHADER_FRAG from "./lighting.frag";
-import LIGHTING_SHADER_VERT from "./lighting.vert";
+import { convertToLines, Line } from '../utils/PolygonUtils';
+import LIGHTING_SHADER_FRAG from './lighting.frag';
+import LIGHTING_SHADER_VERT from './lighting.vert';
+import { Vector2 } from '@ecs/plugins/math/Vector';
+import { SimpleGeometry } from '@ecs/plugins/render/2d/helpers/SimpleGeometry';
+import { Entity } from '@ecs/core/Entity';
 
 // Stolen from
 // https://ncase.me/sight-and-light/
@@ -59,13 +75,13 @@ function getIntersection(ray, segment) {
 	};
 }
 
-
 export class BasicLightingSystem extends System {
 	private lightMesh: Mesh;
-	private renderTexture: RenderTexture;
-	private clearColor: Graphics;
+	private maskRenderTexture: RenderTexture;
+	private maskClearColor: Graphics;
 	private fullscreenCameraSprite: Sprite;
 	private debugSprite: Sprite;
+	private geometry: SimpleGeometry;
 
 	protected queries = useQueries(this, {
 		lights: all(Transform, Light),
@@ -89,97 +105,112 @@ export class BasicLightingSystem extends System {
 				lightSize: 0.2
 			}
 		});
-		material.uniforms
 
-		const geometry = new Geometry().addAttribute('aVertexPosition', []);
-		this.lightMesh = new Mesh(geometry, material, undefined, DRAW_MODES.TRIANGLE_FAN);
-		this.lightMesh.filterArea = new Rectangle(0, 0, 1280, 720)
+		this.geometry = new SimpleGeometry();
+		this.lightMesh = new Mesh(this.geometry, material, undefined, DRAW_MODES.TRIANGLE_FAN);
+		this.lightMesh.filterArea = new Rectangle(0, 0, 1280, 720);
 		this.lightMesh.filters = [new PIXI.filters.BlurFilter(4)];
 
-		this.renderTexture = new RenderTexture(new BaseRenderTexture({ width: 1280, height: 720 }));
+		this.maskRenderTexture = new RenderTexture(new BaseRenderTexture({ width: 1280, height: 720 }));
 
-		this.clearColor = new Graphics();
-		this.clearColor.beginFill(0xff0000);
-		this.clearColor.drawRect(0, 0, 1280, 720);
+		this.maskClearColor = new Graphics();
+		this.maskClearColor.beginFill(0xff0000);
+		this.maskClearColor.drawRect(0, 0, 1280, 720);
 
 		this.fullscreenCameraSprite = new Sprite(PIXI.Texture.WHITE);
 		this.fullscreenCameraSprite.width = 1280;
 		this.fullscreenCameraSprite.height = 720;
 		this.fullscreenCameraSprite.anchor.set(0.5);
-		this.fullscreenCameraSprite.mask = Sprite.from(this.renderTexture);
-		this.fullscreenCameraSprite.alpha = 0.6;
+		this.fullscreenCameraSprite.mask = Sprite.from(this.maskRenderTexture);
+		this.fullscreenCameraSprite.alpha = 0.8;
 		this.fullscreenCameraSprite.tint = 0x000000;
 		this.graphics.get(Container).addChild(this.fullscreenCameraSprite);
 
-		this.debugSprite = Sprite.from(this.renderTexture);
+		this.debugSprite = Sprite.from(this.maskRenderTexture);
 		this.debugSprite.scale.set(0.2, 0.2);
 		this.graphics.get(Container).addChild(this.debugSprite);
-		// debugSprite.position.x -= 100;
-		// debugSprite.position.set(-(1280 / 2) + 100, -(720 / 2) + 100)
-		// this.fullscreenCameraSprite.addChild(debugSprite)
+	}
 
-		Gsap.fromTo(this.lightMesh.material.uniforms, 2,  {
-			lightSize: 1,
+	getCameraBounds(entity: Entity) {
+		const transform = entity.get(Transform);
+		const camera = entity.get(Camera);
 
-		}, {
-			lightSize: 0.05,
-			delay: 3,
-			yoyo: true,
-			repeat: 1
-		})
+		return {
+			topLeft: { x: transform.x - (camera.width / 2), y: transform.y - (camera.height / 2) },
+			topRight: { x: transform.x + (camera.width / 2), y: transform.y - (camera.height / 2) },
+			bottomRight: { x: transform.x + (camera.width / 2), y: transform.y + (camera.height / 2) },
+			bottomLeft: { x: transform.x - (camera.width / 2), y: transform.y + (camera.height / 2) },
+		}
 	}
 
 	update(dt: number) {
-		let lines = [];
-		const points = [];
+		let lines: Line[] = [];
 
 		const camera = this.queries.camera.first.get(Transform);
 
 		const polygonShapeData = this.queries.polygons.entities.map(entity => entity.get(PolygonShapeData));
 
 		const cameraPolygon = new PolygonShapeData();
-		cameraPolygon.polygons = [];
+
+		const bigNumber = 10000;
 		cameraPolygon.polygons.push([
-			{ x: camera.x - 1280 / 2, y: camera.y - 720 / 2 },
-			{ x: camera.x + 1280 / 2, y: camera.y - 720 / 2 },
-			{ x: camera.x + 1280 / 2, y: camera.y + 720 / 2 },
-			{ x: camera.x - 1280 / 2, y: camera.y + 720 / 2 }
+			{ x: -bigNumber, y: -bigNumber },
+			{ x: bigNumber, y: -bigNumber },
+			{ x: bigNumber, y: bigNumber },
+			{ x: -bigNumber, y: bigNumber },
 		]);
 
 		polygonShapeData.push(cameraPolygon);
 
 		polygonShapeData.forEach(polygonShapeData => {
 			lines.push(...convertToLines(polygonShapeData));
-			points.push(...polygonShapeData.polygons.flat(1));
 		});
 
 		lines = lines.flat();
 
-		const lightPosition = this.queries.lights.first.get(Transform);
+		this.getRenderer().application.renderer.render(this.maskClearColor, this.maskRenderTexture);
 
-		const angles: Set<number> = new Set();
-		points.forEach(line => {
-			const angleA = Math.atan2(line.y - lightPosition.y, line.x - lightPosition.x);
+		for (const light of this.queries.lights) {
+			const transform = light.get(Transform);
+			this.geometry.verticies = this.buildLightVerticies(lines, transform.position);
+			this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
+			this.getRenderer().application.renderer.render(this.lightMesh, this.maskRenderTexture, false);
+		}
 
-			angles.add(angleA);
-			angles.add(angleA - 0.00001);
-			angles.add(angleA + 0.00001);
-		});
+		this.fullscreenCameraSprite.position.set(camera.position.x, camera.position.y);
+		this.debugSprite.position.set(camera.position.x - 1280 / 2, camera.position.y - 720 / 2);
+	}
 
-		const intersects = [];
+	buildLightVerticies(lines: Line[], lightPosition: Vector2) {
+		const raycastAngles: Set<number> = new Set();
 
-		angles.forEach(angle => {
-			const dx = Math.cos(angle) * 1000;
-			const dy = Math.sin(angle) * 1000;
+		const addVector = (vector: Vector2) => {
+			const angle = Math.atan2(vector.y - lightPosition.y, vector.x - lightPosition.x);
+
+			raycastAngles.add(angle);
+			raycastAngles.add(angle - 0.00001);
+			raycastAngles.add(angle + 0.00001);
+		}
+
+		for (const line of lines) {
+			addVector(line.a);
+			addVector(line.b);
+		}
+
+		const raycastResults = [];
+
+		for (const angle of raycastAngles) {
+			const deltaX = Math.cos(angle) * 1000;
+			const deltaY = Math.sin(angle) * 1000;
 
 			const ray = {
 				a: { x: lightPosition.x, y: lightPosition.y },
-				b: { x: lightPosition.x + dx, y: lightPosition.y + dy }
+				b: { x: lightPosition.x + deltaX, y: lightPosition.y + deltaY }
 			};
 
 			let closestIntersect = null;
-			for (let i = 0; i < lines.length; i++) {
-				const intersect = getIntersection(ray, lines[i]);
+			for (const line of lines) {
+				const intersect = getIntersection(ray, line);
 				if (!intersect) continue;
 				if (!closestIntersect || intersect.param < closestIntersect.param) {
 					closestIntersect = intersect;
@@ -188,42 +219,20 @@ export class BasicLightingSystem extends System {
 
 			if (closestIntersect) {
 				closestIntersect.angle = angle;
-				intersects.push(closestIntersect);
+				raycastResults.push(closestIntersect);
 			}
-		});
+		}
 
-		const orderedIntersects = intersects.sort(function (a, b) {
+		const orderedRaycastResults = raycastResults.sort(function (a, b) {
 			return a.angle - b.angle;
 		});
 
-		const verts: number[] = [];
-		verts.push(lightPosition.position.x, lightPosition.position.y);
+		const meshVerticies = [
+			lightPosition,
+			...orderedRaycastResults,
+			orderedRaycastResults[0]
+		];
 
-		orderedIntersects.forEach(i => {
-			verts.push(i.x);
-			verts.push(i.y);
-		});
-
-		verts.push(orderedIntersects[0].x, orderedIntersects[0].y);
-
-		this.lightMesh.geometry.getBuffer('aVertexPosition').update(new Float32Array(verts));
-		this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
-
-		// LIGHTING_SHADER.uniforms.position.x = lightPosition.position.x;
-		// LIGHTING_SHADER.uniforms.position.y = lightPosition.position.y;
-		// LIGHTING_SHADER.uniforms.lightSize.value = 0.2;
-		// debugger;
-		// this.lightMesh.material.uniforms.lightSize = 0.05;
-
-
-		// console.log(this.lightMesh.shader.uniforms.lightSize = 0.2)
-
-
-
-		this.getRenderer().application.renderer.render(this.clearColor, this.renderTexture);
-		this.getRenderer().application.renderer.render(this.lightMesh, this.renderTexture, false);
-
-		this.fullscreenCameraSprite.position.set(camera.position.x, camera.position.y);
-		this.debugSprite.position.set(camera.position.x - (1280 / 2), camera.position.y - (720 / 2));
+		return meshVerticies;
 	}
 }

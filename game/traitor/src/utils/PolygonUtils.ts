@@ -1,5 +1,6 @@
 import { PolygonFile } from './PolygonFile';
 import { PolygonShapeData } from '../components/PolygonData';
+import { Vector2 } from '@ecs/plugins/math/Vector';
 
 export const convertToPolygonShape = (polygonFile: PolygonFile): PolygonShapeData => {
     const polygonShapes = new PolygonShapeData();
@@ -17,8 +18,9 @@ export const convertToPolygonShape = (polygonFile: PolygonFile): PolygonShapeDat
 	return polygonShapes;
 };
 
+export type Line = { a: Vector2; b: Vector2 };
 
-export const convertToLines = (shapeData: PolygonShapeData) => {
+export const convertToLines = (shapeData: PolygonShapeData): Line[] => {
 	const lines = [];
 
 	shapeData.polygons.forEach(polygon => {

@@ -54,6 +54,13 @@ export class ClientTraitor extends Space {
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new ArcadePhysicsSystem());
 
+		const randomLight = new Entity();
+		randomLight.add(Transform, {
+			x: 400,
+			y: 600
+		});
+		randomLight.add(Light);
+		this.addEntity(randomLight);
 
 		const ship = new Entity();
 		ship.add(Transform, {
