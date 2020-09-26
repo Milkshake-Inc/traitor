@@ -95,6 +95,7 @@ export class BasicLightingSystem extends System {
 	private fullscreenCameraSprite: Sprite;
 	private fullscreenColorSprite: Sprite;
 	private geometry: SimpleGeometry;
+	private lines: Line[];
 
 	protected queries = useQueries(this, {
 		lights: all(Transform, Light),
@@ -164,11 +165,10 @@ export class BasicLightingSystem extends System {
 		}
 	}
 
-	update(dt: number) {
+	buildLinesArray() {
+		console.log("Rebuilding lines array")
+
 		let lines: Line[] = [];
-
-		const camera = this.queries.camera.first.get(Transform);
-
 		const polygonShapeData = this.queries.polygons.entities.map(entity => entity.get(PolygonShapeData));
 
 		const cameraPolygon = new PolygonShapeData();
@@ -190,6 +190,15 @@ export class BasicLightingSystem extends System {
 
 		lines = lines.flat();
 
+		return lines;
+	}
+
+	update(dt: number) {
+		if(!this.lines) {
+			this.lines = this.buildLinesArray();
+		}
+
+		const camera = this.queries.camera.first.get(Transform);
 		const renderer = this.getRenderer().application.renderer;
 
 		renderer.render(this.maskClearColor, this.maskRenderTexture);
@@ -202,7 +211,7 @@ export class BasicLightingSystem extends System {
 			const transform = lightEntity.get(Transform);
 			const light = lightEntity.get(Light);
 
-			this.geometry.verticies = this.buildLightVerticies(lines, transform.position);
+			this.geometry.verticies = this.buildLightVerticies(this.lines, transform.position);
 			this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
 			lightUniform.position.x = transform.position.x - camera.position.x + (1280 / 2);
