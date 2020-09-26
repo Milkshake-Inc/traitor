@@ -20,6 +20,7 @@ import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimation
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
+import { BasicLightingSystem } from './systems/BasicLightingSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -45,7 +46,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new InputSystem());
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerAnimationSystem());
-		// this.addSystem(new BasicLightingSystem());
+		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
 
@@ -53,20 +54,36 @@ export class ClientTraitor extends Space {
 
 		const randomLight = new Entity();
 		randomLight.add(Transform, {
-			x: 0,
-			y: 0
+			x: 400,
+			y: 400
 		});
-		randomLight.add(Light);
+		randomLight.add(Light, {
+			color: Color.Red,
+			intensity: 0.6,
+			feather: 200,
+			size: 500
+		});
 		this.addEntity(randomLight);
 
-		const ship = new Entity();
-		ship.add(Transform, {
-			// scale: Vector3.EQUAL(0.8),
+		const randomLight2 = new Entity();
+		randomLight2.add(Transform, {
+			x: 800,
+			y: 400
 		});
-		ship.add(Sprite.from(Assets.Ship));
+		randomLight2.add(Light, {
+			color: Color.Green,
+			intensity: 0.6,
+			feather: 200,
+			size: 500
+		});
+		this.addEntity(randomLight2);
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipLighting].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
+
+		const ship = new Entity();
+		ship.add(Transform);
+		ship.add(Sprite.from(Assets.Ship));
 		ship.add(polygonShape);
 		ship.add(ShadowCaster);
 
@@ -94,7 +111,9 @@ export class ClientTraitor extends Space {
 		player.add(ArcadePhysics);
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
-		player.add(Light);
+		player.add(Light, {
+			color: Color.Blue
+		});
 
 		this.addEntities(ship, player);
 	}

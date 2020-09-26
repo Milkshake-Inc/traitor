@@ -1,3 +1,8 @@
-export class Light {
+import Color from "@ecs/plugins/math/Color";
 
+export class Light {
+    public size = 200;
+    public feather = 50;
+    public color = Color.SkyBlue;
+    public intensity = 1.0;
 }
