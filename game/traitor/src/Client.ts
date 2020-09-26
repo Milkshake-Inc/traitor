@@ -46,10 +46,11 @@ export class ClientTraitor extends Space {
 		this.addSystem(new InputSystem());
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerAnimationSystem());
-		this.addSystem(new BasicLightingSystem({
-		}));
+
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
+
+		this.addSystem(new BasicLightingSystem());
 
 		// this.addSystem(new ArcadePhysicsDebugger())
 

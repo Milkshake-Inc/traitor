@@ -23,7 +23,8 @@ import {
 	RenderTexture,
 	Sprite,
 	Texture,
-	utils
+	utils,
+	SCALE_MODES
 } from 'pixi.js';
 import { Light } from '../components/Light';
 import { PolygonShapeData } from '../components/PolygonData';
@@ -64,6 +65,7 @@ type BasicLightingConfiguration = {
 	maskColor: number;
 
 	blendMode: BLEND_MODES;
+	scaleMode: SCALE_MODES;
 };
 
 const DEFAULT_BASIC_LIGHTING_CONFIGURATION: BasicLightingConfiguration = {
@@ -77,7 +79,8 @@ const DEFAULT_BASIC_LIGHTING_CONFIGURATION: BasicLightingConfiguration = {
 	maskAlpha: 0.8,
 	maskColor: Color.Black,
 
-	blendMode: BLEND_MODES.SCREEN
+	blendMode: BLEND_MODES.SCREEN,
+	scaleMode: SCALE_MODES.LINEAR
 };
 
 export class BasicLightingState {
@@ -155,6 +158,9 @@ export class BasicLightingSystem extends System {
 				new BaseRenderTexture({ width: configuration.width, height: configuration.height, resolution: configuration.resolution })
 			);
 
+			this.state.maskRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
+			this.state.colorRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
+
 			this.maskClearColor = createMaskClearGraphic(configuration.width, configuration.height);
 
 			this.state.maskSprite = new Sprite(PIXI.Texture.WHITE);
@@ -168,18 +174,6 @@ export class BasicLightingSystem extends System {
 			// Do we _always_ want to add this to stage? Maybe an option
 			this.graphics.get(Container).addChild(this.state.maskSprite);
 		}
-	}
-
-	getCameraBounds(entity: Entity) {
-		const transform = entity.get(Transform);
-		const camera = entity.get(Camera);
-
-		return {
-			topLeft: { x: transform.x - camera.width / 2, y: transform.y - camera.height / 2 },
-			topRight: { x: transform.x + camera.width / 2, y: transform.y - camera.height / 2 },
-			bottomRight: { x: transform.x + camera.width / 2, y: transform.y + camera.height / 2 },
-			bottomLeft: { x: transform.x - camera.width / 2, y: transform.y + camera.height / 2 }
-		};
 	}
 
 	buildLinesArray() {
@@ -231,8 +225,8 @@ export class BasicLightingSystem extends System {
 			(this.lightMesh.geometry as SimpleGeometry).verticies = this.buildLightVerticies(this.cachedLines, transform.position);
 			this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
-			lightUniform.position.x = transform.position.x - camera.position.x + 1280 / 2;
-			lightUniform.position.y = transform.position.y - camera.position.y + 720 / 2;
+			lightUniform.position.x = transform.position.x - camera.position.x + 1280 / 2 * this.state.configuration.resolution;
+			lightUniform.position.y = transform.position.y - camera.position.y + 720 / 2 * this.state.configuration.resolution;
 			lightUniform.size = light.size;
 			lightUniform.feather = light.feather;
 			lightUniform.intensity = light.intensity;
