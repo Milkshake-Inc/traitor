@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { useQueries, useSingletonQuery } from '@ecs/core/helpers';
+import { useQueries, useSingletonQuery, useState } from '@ecs/core/helpers';
 import { useEntity } from '@ecs/core/helpers/useEntity';
 import { all } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
@@ -87,15 +87,69 @@ type LightShaderUniform = {
 	maskMode: boolean;
 }
 
+const DEFAULT_UNIFORM: LightShaderUniform = {
+	feather: 0,
+	maskMode: false,
+	size: 0,
+	position: {
+		x: 0,
+		y: 0
+	},
+	color: [0, 0, 0, 1],
+	intensity: 1.0
+}
+
+type BasicLightingConfiguration = {
+	width: number;
+	height: number;
+	resolution: number;
+
+	drawColor: boolean;
+	drawMask: boolean;
+	maskAlpha: number;
+	maskColor: number;
+}
+
+const DEFAULT_BASIC_LIGHTING_CONFIGURATION: BasicLightingConfiguration = {
+	width: 1280,
+	height: 720,
+	resolution: 1, // [[TODO] Doesn't work yet
+
+	drawColor: true,
+	drawMask: true,
+
+	maskAlpha: 0.8,
+	maskColor: Color.Black
+}
+
+export class BasicLightingState {
+	readonly configuration: BasicLightingConfiguration;
+
+	public maskSprite: Sprite;
+	public colorSprite: Sprite;
+
+	public maskRenderTexture: RenderTexture;
+	public colorRenderTexture: RenderTexture;
+
+	constructor(configuration: BasicLightingConfiguration) {
+		this.configuration = configuration;
+	}
+}
+
+const createMaskClearGraphic = (width: number, height: number) => {
+	const graphics = new Graphics();
+	graphics.beginFill(Color.Red); // Red is for mask
+	graphics.drawRect(0, 0, width, height);
+	return graphics;
+}
+
 export class BasicLightingSystem extends System {
-	private lightMesh: Mesh;
-	private colorRenderTexture: RenderTexture;
-	private maskRenderTexture: RenderTexture;
+
+	protected state: BasicLightingState;
+
 	private maskClearColor: Graphics;
-	private fullscreenCameraSprite: Sprite;
-	private fullscreenColorSprite: Sprite;
-	private geometry: SimpleGeometry;
-	private lines: Line[];
+	private lightMesh: Mesh;
+	private cachedLines: Line[];
 
 	protected queries = useQueries(this, {
 		lights: all(Transform, Light),
@@ -110,47 +164,43 @@ export class BasicLightingSystem extends System {
 
 	protected getRenderer = useSingletonQuery(this, PixiRenderState);
 
-	constructor() {
+	constructor(customConfiguration?: Partial<BasicLightingConfiguration>) {
 		super();
+
+		const configuration = {
+			...DEFAULT_BASIC_LIGHTING_CONFIGURATION,
+			...customConfiguration
+		};
+
+		this.state = useState(this, new BasicLightingState(configuration))
 
 		const material = new MeshMaterial(Texture.WHITE, {
 			program: Program.from(LIGHTING_SHADER_VERT, LIGHTING_SHADER_FRAG),
-			uniforms: {
-				lightSize: 0.2,
-				position: {
-					x: 0,
-					y: 0
-				},
-				color: new Float32Array([0, 0, 0, 1]),
-				intensity: 1.0
-			}
+			uniforms: DEFAULT_UNIFORM
 		});
 
-		this.geometry = new SimpleGeometry();
-		this.lightMesh = new Mesh(this.geometry, material, undefined, DRAW_MODES.TRIANGLE_FAN);
-		this.lightMesh.filterArea = new Rectangle(0, 0, 1280, 720);
-		// this.lightMesh.filters = [new PIXI.filters.BlurFilter(4)];
+		this.lightMesh = new Mesh(new SimpleGeometry(), material, undefined, DRAW_MODES.TRIANGLE_FAN);
+		this.lightMesh.filterArea = new Rectangle(0, 0, configuration.width, configuration.height);
 
-		this.maskRenderTexture = new RenderTexture(new BaseRenderTexture({ width: 1280, height: 720 }));
-		this.colorRenderTexture = new RenderTexture(new BaseRenderTexture({ width: 1280, height: 720 }));
+		this.state.maskRenderTexture = new RenderTexture(new BaseRenderTexture({ width: configuration.width, height: configuration.height, resolution: configuration.resolution }));
+		this.state.colorRenderTexture = new RenderTexture(new BaseRenderTexture({ width: configuration.width, height: configuration.height,resolution: configuration.resolution }));
 
-		this.maskClearColor = new Graphics();
-		this.maskClearColor.beginFill(0xff0000);
-		this.maskClearColor.drawRect(0, 0, 1280, 720);
+		this.maskClearColor = createMaskClearGraphic(configuration.width, configuration.height)
 
-		this.fullscreenCameraSprite = new Sprite(PIXI.Texture.WHITE);
-		this.fullscreenCameraSprite.width = 1280;
-		this.fullscreenCameraSprite.height = 720;
-		this.fullscreenCameraSprite.anchor.set(0.5);
-		this.fullscreenCameraSprite.mask = Sprite.from(this.maskRenderTexture);
-		this.fullscreenCameraSprite.alpha = 0.8;
-		this.fullscreenCameraSprite.tint = 0x000000;
+		this.state.maskSprite = new Sprite(PIXI.Texture.WHITE);
+		this.state.maskSprite.width = configuration.width;
+		this.state.maskSprite.height = configuration.height;
+		this.state.maskSprite.anchor.set(0.5);
+		this.state.maskSprite.mask = Sprite.from(this.state.maskRenderTexture);
+		this.state.maskSprite.alpha = configuration.maskAlpha;
+		this.state.maskSprite.tint = configuration.maskColor;
 
-		this.fullscreenColorSprite = new Sprite(this.colorRenderTexture);
-		this.fullscreenColorSprite.anchor.set(0.5);
+		this.state.colorSprite = new Sprite(this.state.colorRenderTexture);
+		this.state.colorSprite.anchor.set(0.5);
 
-		this.graphics.get(Container).addChild(this.fullscreenCameraSprite);
-		this.graphics.get(Container).addChild(this.fullscreenColorSprite);
+		// Adds to stage
+		this.graphics.get(Container).addChild(this.state.maskSprite);
+		this.graphics.get(Container).addChild(this.state.colorSprite);
 	}
 
 	getCameraBounds(entity: Entity) {
@@ -166,7 +216,7 @@ export class BasicLightingSystem extends System {
 	}
 
 	buildLinesArray() {
-		console.log("Rebuilding lines array")
+		console.log(`💡  Lighting Rebuilding.`)
 
 		let lines: Line[] = [];
 		const polygonShapeData = this.queries.polygons.entities.map(entity => entity.get(PolygonShapeData));
@@ -194,14 +244,14 @@ export class BasicLightingSystem extends System {
 	}
 
 	update(dt: number) {
-		if(!this.lines) {
-			this.lines = this.buildLinesArray();
+		if(!this.cachedLines) {
+			this.cachedLines = this.buildLinesArray();
 		}
 
 		const camera = this.queries.camera.first.get(Transform);
 		const renderer = this.getRenderer().application.renderer;
 
-		renderer.render(this.maskClearColor, this.maskRenderTexture);
+		renderer.render(this.maskClearColor, this.state.maskRenderTexture);
 
 		const lightUniform: LightShaderUniform = this.lightMesh.shader.uniforms;
 
@@ -211,7 +261,7 @@ export class BasicLightingSystem extends System {
 			const transform = lightEntity.get(Transform);
 			const light = lightEntity.get(Light);
 
-			this.geometry.verticies = this.buildLightVerticies(this.lines, transform.position);
+			(this.lightMesh.geometry as SimpleGeometry).verticies = this.buildLightVerticies(this.cachedLines, transform.position);
 			this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
 			lightUniform.position.x = transform.position.x - camera.position.x + (1280 / 2);
@@ -223,17 +273,17 @@ export class BasicLightingSystem extends System {
 
 
 			lightUniform.maskMode = true;
-			renderer.render(this.lightMesh, this.maskRenderTexture, false);
+			renderer.render(this.lightMesh, this.state.maskRenderTexture, false);
 
 			lightUniform.maskMode = false;
-			renderer.render(this.lightMesh, this.colorRenderTexture, firstLight);
+			renderer.render(this.lightMesh, this.state.colorRenderTexture, firstLight);
 
 			firstLight = false;
 		}
-		this.fullscreenColorSprite.blendMode = BLEND_MODES.SCREEN; // Configureable
+		this.state.colorSprite.blendMode = BLEND_MODES.SCREEN; // Should be configureable
 
-		this.fullscreenColorSprite.position.set(camera.position.x, camera.position.y);
-		this.fullscreenCameraSprite.position.set(camera.position.x, camera.position.y);
+		this.state.colorSprite.position.set(camera.position.x, camera.position.y);
+		this.state.maskSprite.position.set(camera.position.x, camera.position.y);
 	}
 
 	buildLightVerticies(lines: Line[], lightPosition: Vector2) {
