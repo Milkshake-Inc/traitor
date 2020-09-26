@@ -46,7 +46,8 @@ export class ClientTraitor extends Space {
 		this.addSystem(new InputSystem());
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerAnimationSystem());
-		this.addSystem(new BasicLightingSystem());
+		this.addSystem(new BasicLightingSystem({
+		}));
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
 
@@ -61,6 +62,8 @@ export class ClientTraitor extends Space {
 			color: Color.Red,
 			intensity: 0.6,
 			feather: 200,
+			drawsToMask: false,
+			drawsToColor: true,
 			size: 500
 		});
 		this.addEntity(randomLight);
@@ -74,11 +77,13 @@ export class ClientTraitor extends Space {
 			color: Color.Green,
 			intensity: 0.6,
 			feather: 200,
+			drawsToMask: false,
+			drawsToColor: true,
 			size: 500
 		});
 		this.addEntity(randomLight2);
 
-		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipLighting].data;
+		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
 
 		const ship = new Entity();
@@ -112,7 +117,9 @@ export class ClientTraitor extends Space {
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
 		player.add(Light, {
-			color: Color.Blue
+			color: Color.White,
+			intensity: 0.2,
+			drawsToColor: false,
 		});
 
 		this.addEntities(ship, player);
