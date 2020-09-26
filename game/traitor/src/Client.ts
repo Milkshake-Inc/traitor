@@ -21,6 +21,8 @@ import { PlayerControlSystem } from './systems/PlayerControlSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
 import { BasicLightingSystem } from './systems/BasicLightingSystem';
+import { RoleSystem } from './systems/RoleSystem';
+import { useSimpleEvents } from '@ecs/core/helpers';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -49,11 +51,12 @@ export class ClientTraitor extends Space {
 
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
+		this.addSystem(new RoleSystem());
 
 		this.addSystem(new BasicLightingSystem());
 
 		// this.addSystem(new ArcadePhysicsDebugger())
-
+		
 		const randomLight = new Entity();
 		randomLight.add(Transform, {
 			x: 400,
@@ -68,7 +71,7 @@ export class ClientTraitor extends Space {
 			size: 500
 		});
 		this.addEntity(randomLight);
-
+		
 		const randomLight2 = new Entity();
 		randomLight2.add(Transform, {
 			x: 800,
@@ -85,17 +88,18 @@ export class ClientTraitor extends Space {
 		this.addEntity(randomLight2);
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
-		const polygonShape = convertToPolygonShape(shipPolygonFile);
 
+		const polygonShape = convertToPolygonShape(shipPolygonFile);
+		
 		const ship = new Entity();
 		ship.add(Transform);
 		ship.add(Sprite.from(Assets.Ship));
 		ship.add(polygonShape);
 		ship.add(ShadowCaster);
-
+		
 		const shipCollisionPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const collisionPolygonShape = convertToPolygonShape(shipCollisionPolygonFile);
-
+		
 		for (const polygon of collisionPolygonShape.polygons) {
 			const wall = new Entity();
 			wall.add(Transform);
@@ -105,7 +109,7 @@ export class ClientTraitor extends Space {
 			});
 			this.addEntity(wall);
 		}
-
+		
 		const player = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
 		playerSprite.anchor.set(0.5);
@@ -122,8 +126,13 @@ export class ClientTraitor extends Space {
 			intensity: 0.2,
 			drawsToColor: false,
 		});
-
+		
 		this.addEntities(ship, player);
+
+		setTimeout(() => {
+			const event = useSimpleEvents();
+			event.emit(RoleSystem.ASSIGN_ROLE_EVENT);
+		}, 2000);
 	}
 }
 
