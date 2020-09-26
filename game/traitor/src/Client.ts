@@ -15,15 +15,11 @@ import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
 import { Loader, Sprite } from 'pixi.js';
 import { Light } from './components/Light';
-import { PolygonShapeData } from './components/PolygonData';
 import { ShadowCaster } from './components/ShadowCaster';
-import { usePolygonDebugCouple } from './couple/usePolygonDebugCouple';
-import { BasicLightingSystem } from './systems/BasicLightingSystem';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
-import { ArcadePhysicsDebugger } from './systems/PolygonRendererSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -40,11 +36,9 @@ export class ClientTraitor extends Space {
 
 	setup() {
 		this.addSystem(
-			new RenderSystem(
-				{
-					clearColor: Color.SkyBlue
-				}
-			)
+			new RenderSystem({
+				clearColor: Color.SkyBlue
+			})
 		);
 
 		this.addSystem(new CameraRenderSystem());
@@ -52,9 +46,10 @@ export class ClientTraitor extends Space {
 		this.addSystem(new PlayerControlSystem());
 		this.addSystem(new PlayerAnimationSystem());
 		// this.addSystem(new BasicLightingSystem());
-		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new ArcadePhysicsSystem());
-		this.addSystem(new ArcadePhysicsDebugger())
+		this.addSystem(new ArcadeCollisionSystem());
+
+		// this.addSystem(new ArcadePhysicsDebugger())
 
 		const randomLight = new Entity();
 		randomLight.add(Transform, {
@@ -74,38 +69,29 @@ export class ClientTraitor extends Space {
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
 		ship.add(polygonShape);
 		ship.add(ShadowCaster);
-		// ship.add()
 
 		const shipCollisionPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const collisionPolygonShape = convertToPolygonShape(shipCollisionPolygonFile);
 
-		// for (const polygon of collisionPolygonShape.polygons) {
-		// 	const wall = new Entity();
-		// 	wall.add(Transform);
-		// 	wall.add(ArcadeCollisionShape.Polygon(polygon.map(p => new Vector3(p.x, p.y, 0))))
-		// 	wall.add(ArcadePhysics, {
-		// 		isStatic: true
-		// 	})
-		// 	this.addEntity(wall);
-		// }
-		const wall = new Entity();
+		for (const polygon of collisionPolygonShape.polygons) {
+			const wall = new Entity();
 			wall.add(Transform);
-			wall.add(ArcadeCollisionShape.Box(50, 50))
+			wall.add(ArcadeCollisionShape.Polygon(polygon.map(p => new Vector3(p.x, p.y, 0)).reverse()));
 			wall.add(ArcadePhysics, {
 				isStatic: true
-			})
+			});
 			this.addEntity(wall);
-
+		}
 
 		const player = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
 		playerSprite.anchor.set(0.5);
 		player.add(Transform, {
-			position: new Vector3(0, 0)
+			position: new Vector3(400, 500)
 		});
 		player.add(playerSprite);
 		player.add(ArcadeCollisionShape.Circle(25));
-		player.add(ArcadePhysics)
+		player.add(ArcadePhysics);
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
 		player.add(Light);

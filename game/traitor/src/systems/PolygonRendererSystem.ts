@@ -33,7 +33,7 @@ export class ArcadePhysicsDebugger extends System {
 			}
 
 			if (shape instanceof Polygon) {
-				graphics.drawPolygon(shape.points.map(e => new PIXI.Point(e.x, e.y)));
+				graphics.drawPolygon(shape.points.map(e => new PIXI.Point(shape.pos.x + e.x, shape.pos.y +  e.y)));
 			}
 		}
 	}
