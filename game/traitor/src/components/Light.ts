@@ -5,4 +5,6 @@ export class Light {
     public feather = 50;
     public color = Color.SkyBlue;
     public intensity = 1.0;
+    public drawsToMask = true;
+    public drawsToColor = true;
 }
