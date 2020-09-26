@@ -25,6 +25,8 @@ import { RoleSystem } from './systems/RoleSystem';
 import { useSimpleEvents } from '@ecs/core/helpers';
 import { Player } from './components/Player';
 import Text from '@ecs/plugins/render/2d/components/Text';
+import ThirdPersonCameraSystem from '@ecs/plugins/render/3d/systems/ThirdPersonCameraSystem';
+import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -56,7 +58,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new RoleSystem());
 
 		this.addSystem(new BasicLightingSystem());
-
+		this.addSystem(new PlayerNamePlateSystems())
 		// this.addSystem(new ArcadePhysicsDebugger())
 
 		const randomLight = new Entity();
@@ -124,10 +126,6 @@ export class ClientTraitor extends Space {
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
 		player.add(Player);
-		player.add(Text, {
-			value: player.get(Player).name,
-			anchor: new Vector3(0.5, -1.8)
-		});
 		player.add(Light, {
 			color: Color.White,
 			intensity: 0.2,
@@ -143,6 +141,6 @@ export class ClientTraitor extends Space {
 	}
 }
 
-const engine = new TickerEngine();
+const engine = new TickerEngine(60);
 new ClientTraitor(engine, true);
 console.log('🎉 Client');

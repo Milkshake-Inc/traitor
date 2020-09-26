@@ -11,6 +11,7 @@ import { AnimatedPlayer } from "./PlayerAnimationSystem";
 import { Player } from "../components/Player";
 import Text from "@ecs/plugins/render/2d/components/Text";
 import Color from "@ecs/plugins/math/Color";
+import { Entity } from "@ecs/core/Entity";
 
 type RoleConfiguration = {
     numberTraitors: number;
@@ -28,6 +29,29 @@ export class RoleState {
 	constructor(configuration: RoleConfiguration) {
         this.configuration = configuration;
 	}
+}
+
+export const getRoleFromEntity = (entity: Entity): CrewRole | TraitorRole | JesterRole | null => {
+    if(entity.has(CrewRole)) return entity.get(CrewRole);
+    if(entity.has(TraitorRole)) return entity.get(TraitorRole);
+    if(entity.has(JesterRole)) return entity.get(JesterRole);
+
+    return null;
+}
+
+export const getRoleText = (entity: CrewRole | TraitorRole | JesterRole | null) => {
+    if(entity instanceof CrewRole) return "Crew";
+    if(entity instanceof TraitorRole) return "Traitor";
+    if(entity instanceof JesterRole) return "Jester";
+
+    return "";
+}
+
+export const getRoleTextColor = (entity: CrewRole | TraitorRole | JesterRole | null) => {
+    if(entity instanceof TraitorRole) return Color.Red;
+    if(entity instanceof JesterRole) return Color.Blue;
+
+    return Color.White;
 }
 
 export class RoleSystem extends System {
@@ -63,26 +87,21 @@ export class RoleSystem extends System {
         for (let i = 0; i < allPlayers.length; i++) {
             const player = allPlayers[i];
 
-            const { name } = player.get(Player);
-
             // Traitors
             if (i < numberOfTraitors) {
-                player.addComponent(TraitorRole);
-                player.get(Text).value = `[Traitor] ${name}`
+                player.add(TraitorRole);
                 continue;
             }
 
             // Jesters
             if (i < numberOfTraitors + numberOfJesters) {
-                player.addComponent(JesterRole);
-                player.get(Text).value = `[Jester] ${name}`
+                player.add(JesterRole);
                 continue;
             }
 
             // Crew
             if (i >= numberOfTraitors + numberOfJesters) {
-                player.addComponent(CrewRole);
-                player.get(Text).value = `[Crew] ${name}`
+                player.add(CrewRole);
             }
         }
     }
