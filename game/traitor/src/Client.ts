@@ -13,7 +13,7 @@ import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSyste
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
-import { Loader, Sprite } from 'pixi.js';
+import { Loader, Sprite, Texture } from 'pixi.js';
 import { Light } from './components/Light';
 import { ShadowCaster } from './components/ShadowCaster';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
@@ -24,9 +24,9 @@ import { BasicLightingSystem } from './systems/BasicLightingSystem';
 import { RoleSystem } from './systems/RoleSystem';
 import { useSimpleEvents } from '@ecs/core/helpers';
 import { Player } from './components/Player';
-import Text from '@ecs/plugins/render/2d/components/Text';
-import ThirdPersonCameraSystem from '@ecs/plugins/render/3d/systems/ThirdPersonCameraSystem';
 import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
+import { Interactable } from '@ecs/plugins/render/2d/components/Interactable';
+import { InteractableSystem } from './components/InteractableSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -56,6 +56,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new RoleSystem());
+		this.addSystem(new InteractableSystem());
 
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems())
@@ -132,12 +133,27 @@ export class ClientTraitor extends Space {
 			drawsToColor: false,
 		});
 
-		this.addEntities(ship, player);
+		const interactiveItem1 = new Entity();
+		const interactiveSprite1 = Sprite.from(Texture.WHITE);
+		interactiveSprite1.anchor.set(0.5);
+		interactiveItem1.add(interactiveSprite1);
+		interactiveItem1.add(Transform, { position: new Vector3(500, 600) });
+		interactiveItem1.add(Interactable);
+
+		const interactiveItem2 = new Entity();
+		const interactiveSprite2 = Sprite.from(Texture.WHITE);
+		interactiveSprite2.anchor.set(0.5);
+		interactiveItem2.add(interactiveSprite2);
+		interactiveItem2.add(Transform, { position: new Vector3(300, 300) });
+		interactiveItem2.add(Interactable);
+
+		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
 		setTimeout(() => {
 			const event = useSimpleEvents();
 			event.emit(RoleSystem.ASSIGN_ROLE_EVENT);
 		}, 2000);
+
 	}
 }
 
