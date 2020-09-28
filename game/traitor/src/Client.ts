@@ -28,6 +28,7 @@ import { convertToPolygonShape } from './utils/PolygonUtils';
 import { LocalPlayer } from './components/LocalPlayer';
 import { PlayerMaskSystems } from './systems/PlayerMaskSystem';
 import Random from '@ecs/plugins/math/Random';
+import UIDisplayObject from '@ecs/plugins/render/2d/components/UIDisplayObject';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -107,6 +108,13 @@ export class ClientTraitor extends Space {
 		});
 
 		this.addEntities(ship, player);
+
+		const ui = new Entity();
+		ui.add(Transform);
+		ui.add(Sprite.from('idle-1.png'))
+		ui.add(UIDisplayObject)
+
+		this.addEntities(ui);
 
 		setTimeout(() => {
 			const event = useSimpleEvents();
