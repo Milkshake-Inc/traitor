@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { Entity } from '@ecs/core/Entity';
 import { useQueries, useSingletonQuery, useState } from '@ecs/core/helpers';
 import { useEntity } from '@ecs/core/helpers/useEntity';
 import { all } from '@ecs/core/Query';
@@ -21,10 +20,10 @@ import {
 	Program,
 	Rectangle,
 	RenderTexture,
+	SCALE_MODES,
 	Sprite,
 	Texture,
-	utils,
-	SCALE_MODES
+	utils
 } from 'pixi.js';
 import { Light } from '../components/Light';
 import { PolygonShapeData } from '../components/PolygonData';
@@ -40,6 +39,7 @@ type LightShaderUniform = {
 	intensity: number;
 	color: number[];
 	maskMode: boolean;
+	maskInvertMode: boolean;
 };
 
 const DEFAULT_UNIFORM: LightShaderUniform = {
@@ -51,7 +51,8 @@ const DEFAULT_UNIFORM: LightShaderUniform = {
 		y: 0
 	},
 	color: [0, 0, 0, 1],
-	intensity: 1.0
+	intensity: 1.0,
+	maskInvertMode: false
 };
 
 type BasicLightingConfiguration = {
@@ -61,6 +62,7 @@ type BasicLightingConfiguration = {
 
 	drawColor: boolean;
 	drawMask: boolean;
+
 	maskAlpha: number;
 	maskColor: number;
 
@@ -87,9 +89,11 @@ export class BasicLightingState {
 	readonly configuration: BasicLightingConfiguration;
 
 	public maskSprite: Sprite;
+	public maskInvertedSprite: Sprite;
 	public colorSprite: Sprite;
 
 	public maskRenderTexture: RenderTexture;
+	public maskInvertedRenderTexture: RenderTexture;
 	public colorRenderTexture: RenderTexture;
 
 	constructor(configuration: BasicLightingConfiguration) {
@@ -142,10 +146,12 @@ export class BasicLightingSystem extends System {
 		this.lightMesh = new Mesh(new SimpleGeometry(), material, undefined, DRAW_MODES.TRIANGLE_FAN);
 		this.lightMesh.filterArea = new Rectangle(0, 0, configuration.width, configuration.height);
 
-		if(configuration.drawColor) {
+		if (configuration.drawColor) {
 			this.state.colorRenderTexture = new RenderTexture(
 				new BaseRenderTexture({ width: configuration.width, height: configuration.height, resolution: configuration.resolution })
 			);
+
+			this.state.colorRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
 
 			this.state.colorSprite = new Sprite(this.state.colorRenderTexture);
 			this.state.colorSprite.anchor.set(0.5);
@@ -153,13 +159,12 @@ export class BasicLightingSystem extends System {
 			this.graphics.get(Container).addChild(this.state.colorSprite);
 		}
 
-		if(configuration.drawMask) {
+		if (configuration.drawMask) {
 			this.state.maskRenderTexture = new RenderTexture(
 				new BaseRenderTexture({ width: configuration.width, height: configuration.height, resolution: configuration.resolution })
 			);
 
 			this.state.maskRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
-			this.state.colorRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
 
 			this.maskClearColor = createMaskClearGraphic(configuration.width, configuration.height);
 
@@ -173,6 +178,20 @@ export class BasicLightingSystem extends System {
 
 			// Do we _always_ want to add this to stage? Maybe an option
 			this.graphics.get(Container).addChild(this.state.maskSprite);
+
+			// Inverted mask
+			this.state.maskInvertedRenderTexture = new RenderTexture(
+				new BaseRenderTexture({ width: configuration.width, height: configuration.height, resolution: configuration.resolution })
+			);
+
+			this.state.maskInvertedRenderTexture.baseTexture.scaleMode = this.state.configuration.scaleMode;
+
+			this.state.maskInvertedSprite = new Sprite(this.state.maskInvertedRenderTexture);
+			this.state.maskInvertedSprite.anchor.set(0.5);
+			this.state.maskInvertedSprite.width = 1280;
+			this.state.maskInvertedSprite.height = 720;
+
+			this.graphics.get(Container).addChild(this.state.maskInvertedSprite);
 		}
 	}
 
@@ -212,7 +231,7 @@ export class BasicLightingSystem extends System {
 		const camera = this.queries.camera.first.get(Transform);
 		const renderer = this.getRenderer().application.renderer;
 
-		if(this.state.configuration.drawMask) {
+		if (this.state.configuration.drawMask) {
 			renderer.render(this.maskClearColor, this.state.maskRenderTexture);
 		}
 
@@ -225,8 +244,8 @@ export class BasicLightingSystem extends System {
 			(this.lightMesh.geometry as SimpleGeometry).verticies = this.buildLightVerticies(this.cachedLines, transform.position);
 			this.lightMesh.position.set(-camera.position.x + 1280 / 2, -camera.position.y + 720 / 2);
 
-			lightUniform.position.x = transform.position.x - camera.position.x + 1280 / 2 * this.state.configuration.resolution;
-			lightUniform.position.y = transform.position.y - camera.position.y + 720 / 2 * this.state.configuration.resolution;
+			lightUniform.position.x = transform.position.x - camera.position.x + (1280 / 2) * this.state.configuration.resolution;
+			lightUniform.position.y = transform.position.y - camera.position.y + (720 / 2) * this.state.configuration.resolution;
 			lightUniform.size = light.size;
 			lightUniform.feather = light.feather;
 			lightUniform.intensity = light.intensity;
@@ -234,24 +253,30 @@ export class BasicLightingSystem extends System {
 
 			const firstLight = lightEntity == this.queries.lights.first;
 
-			if(this.state.configuration.drawMask && light.drawsToMask) {
+			if (this.state.configuration.drawMask && light.drawsToMask) {
+				lightUniform.maskInvertMode = false;
 				lightUniform.maskMode = true;
 				renderer.render(this.lightMesh, this.state.maskRenderTexture, false);
+
+				lightUniform.maskInvertMode = true;
+				lightUniform.maskMode = true;
+				renderer.render(this.lightMesh, this.state.maskInvertedRenderTexture, firstLight);
 			}
 
-			if(this.state.configuration.drawColor && light.drawsToColor) {
+			if (this.state.configuration.drawColor && light.drawsToColor) {
 				lightUniform.maskMode = false;
 				renderer.render(this.lightMesh, this.state.colorRenderTexture, firstLight);
 			}
 		}
 
-		if(this.state.configuration.drawColor) {
+		if (this.state.configuration.drawColor) {
 			this.state.colorSprite.position.set(camera.position.x, camera.position.y);
 			this.state.colorSprite.blendMode = this.state.configuration.blendMode;
 		}
 
-		if(this.state.configuration.drawMask) {
+		if (this.state.configuration.drawMask) {
 			this.state.maskSprite.position.set(camera.position.x, camera.position.y);
+			this.state.maskInvertedSprite.position.set(camera.position.x, camera.position.y);
 		}
 	}
 

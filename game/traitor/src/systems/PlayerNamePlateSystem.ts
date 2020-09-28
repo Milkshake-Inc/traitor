@@ -1,77 +1,71 @@
-import { useQueries } from "@ecs/core/helpers";
-import { all, not } from "@ecs/core/Query";
-import { System } from "@ecs/core/System";
-import { Player } from "../components/Player";
-import { Engine } from "@ecs/core/Engine";
-import { Entity } from "@ecs/core/Entity";
-import Text from "@ecs/plugins/render/2d/components/Text";
-import Transform from "@ecs/plugins/math/Transform";
-import { getRoleFromEntity, getRoleText, getRoleTextColor } from "./RoleSystem";
-import Color from "@ecs/plugins/math/Color";
-import { CrewRole } from "../components/roles/CrewRole";
-
-export class NamePlate {
-    public text = ""
-}
-
-
+import { Engine } from '@ecs/core/Engine';
+import { Entity } from '@ecs/core/Entity';
+import { useQueries } from '@ecs/core/helpers';
+import { all } from '@ecs/core/Query';
+import { System } from '@ecs/core/System';
+import Transform from '@ecs/plugins/math/Transform';
+import { Point, Text } from 'pixi.js';
+import { NamePlate } from '../components/NamePlate';
+import { Player } from '../components/Player';
+import { getRoleFromEntity, getRoleText, getRoleTextColor } from './RoleSystem';
 
 export class PlayerNamePlateSystems extends System {
-    protected queries = useQueries(this, {
-        playersWithoutNamePlayer: [ all(Player), not(NamePlate) ],
-        playersWithNamePlayer: [ all(Player, NamePlate) ]
-    })
+	protected queries = useQueries(this, {
+		players: all(Player),
+	});
 
-    protected engine: Engine;
+	protected engine: Engine;
 
-    protected namePlates: Map<Entity, Entity> = new Map();
+	protected namePlates: Map<Entity, Entity> = new Map();
 
-    constructor() {
-        super();
+	constructor() {
+		super();
 
-        this.signalOnAddedToEngine.connect((engine) => {
-            this.engine = engine;
-        });
-    }
+		this.signalOnAddedToEngine.connect(engine => {
+			this.engine = engine;
+		});
+	}
 
-    update(deltaTime: number) {
-        this.queries.playersWithoutNamePlayer.forEach(entity => {
-            entity.add(NamePlate);
+	update(deltaTime: number) {
+		this.queries.players.forEach(entity => {
+			if(!this.namePlates.has(entity)) {
+				// entity.add(NamePlate);
 
-            const namePlateEntity = new Entity();
-            namePlateEntity.add(Transform, {
-                x: 400,
-                y: 400
-            });
-            namePlateEntity.add(Text, {
-                value: "apple"
-            });
+				const namePlateEntity = new Entity();
+				namePlateEntity.add(Transform, {
+					x: 400,
+					y: 400
+				});
+				namePlateEntity.add(Text, {
+					style: {
+						fontSize: 16,
+						align: 'center'
+					},
+					resolution: devicePixelRatio,
+					anchor: new Point(0.5),
+				});
+				namePlateEntity.add(NamePlate);
 
-            this.engine.addEntity(namePlateEntity);
+				this.engine.addEntity(namePlateEntity);
 
-            this.namePlates.set(entity, namePlateEntity);
-        });
+				this.namePlates.set(entity, namePlateEntity);
+			}
 
-        this.queries.playersWithNamePlayer.forEach(entity => {
-            const { name } = entity.get(Player)
+			const { name } = entity.get(Player);
 
-            const namePlate = this.namePlates.get(entity);
-            const namePlateTransfrom = namePlate.get(Transform);
-            const namePlateText = namePlate.get(Text);
+			const namePlate = this.namePlates.get(entity);
+			const namePlateTransfrom = namePlate.get(Transform);
+			const namePlateText = namePlate.get(Text);
 
+			namePlateTransfrom.position.x = entity.get(Transform).position.x;
+			namePlateTransfrom.position.y = entity.get(Transform).position.y + 20;
 
-            namePlateTransfrom.position.x = entity.get(Transform).position.x;
-            namePlateTransfrom.position.y = entity.get(Transform).position.y + 40;
+			const role = getRoleFromEntity(entity);
+			const roleName = getRoleText(role);
+			const roleColor = getRoleTextColor(role);
 
-            const role = getRoleFromEntity(entity)
-            const roleName = getRoleText(role);
-            const roleColor = getRoleTextColor(role);
-
-
-            namePlateText.value = roleName ? `[${roleName}] ${name}` : name;
-            namePlateText.tint = roleColor;
-
-            // console.log(namePlateText.tint);
-        });
-    }
+			namePlateText.text = roleName ? `${name}\n[${roleName}]` : name;
+			namePlateText.style.fill = roleColor;
+		});
+	}
 }

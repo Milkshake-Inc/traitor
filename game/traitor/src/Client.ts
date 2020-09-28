@@ -1,7 +1,9 @@
 import { Entity } from '@ecs/core/Entity';
+import { useSimpleEvents } from '@ecs/core/helpers';
 import TickerEngine from '@ecs/core/TickerEngine';
 import { InputSystem } from '@ecs/plugins/input/systems/InputSystem';
 import Color from '@ecs/plugins/math/Color';
+import Random from '@ecs/plugins/math/Random';
 import Transform from '@ecs/plugins/math/Transform';
 import Vector3 from '@ecs/plugins/math/Vector';
 import { ArcadeCollisionShape } from '@ecs/plugins/physics/arcade/components/ArcadeCollisionShape';
@@ -9,24 +11,25 @@ import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics'
 import ArcadeCollisionSystem from '@ecs/plugins/physics/arcade/systems/ArcadeCollisionSystem';
 import ArcadePhysicsSystem from '@ecs/plugins/physics/arcade/systems/ArcadePhysicsSystem';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
+import { Interactable } from '@ecs/plugins/render/2d/components/Interactable';
 import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSystem';
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
-import { Loader, Sprite, Texture } from 'pixi.js';
+import { filters, Loader, Sprite, Texture } from 'pixi.js';
+import { InteractableSystem } from './components/InteractableSystem';
 import { Light } from './components/Light';
+import { LocalPlayer } from './components/LocalPlayer';
+import { Player } from './components/Player';
 import { ShadowCaster } from './components/ShadowCaster';
+import { BasicLightingSystem } from './systems/BasicLightingSystem';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
+import { PlayerMaskSystems } from './systems/PlayerMaskSystem';
+import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
+import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
-import { BasicLightingSystem } from './systems/BasicLightingSystem';
-import { RoleSystem } from './systems/RoleSystem';
-import { useSimpleEvents } from '@ecs/core/helpers';
-import { Player } from './components/Player';
-import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
-import { Interactable } from '@ecs/plugins/render/2d/components/Interactable';
-import { InteractableSystem } from './components/InteractableSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -59,38 +62,9 @@ export class ClientTraitor extends Space {
 		this.addSystem(new InteractableSystem());
 
 		this.addSystem(new BasicLightingSystem());
-		this.addSystem(new PlayerNamePlateSystems())
+		this.addSystem(new PlayerNamePlateSystems());
+		this.addSystem(new PlayerMaskSystems())
 		// this.addSystem(new ArcadePhysicsDebugger())
-
-		const randomLight = new Entity();
-		randomLight.add(Transform, {
-			x: 400,
-			y: 400
-		});
-		randomLight.add(Light, {
-			color: Color.Red,
-			intensity: 0.6,
-			feather: 200,
-			drawsToMask: false,
-			drawsToColor: true,
-			size: 500
-		});
-		this.addEntity(randomLight);
-
-		const randomLight2 = new Entity();
-		randomLight2.add(Transform, {
-			x: 800,
-			y: 400
-		});
-		randomLight2.add(Light, {
-			color: Color.Green,
-			intensity: 0.6,
-			feather: 200,
-			drawsToMask: false,
-			drawsToColor: true,
-			size: 500
-		});
-		this.addEntity(randomLight2);
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 
@@ -126,11 +100,13 @@ export class ClientTraitor extends Space {
 		player.add(ArcadePhysics);
 		player.add(Camera, { offset: new Vector3(0, 0) });
 		player.add(AnimatedPlayer);
+		player.add(LocalPlayer);
 		player.add(Player);
 		player.add(Light, {
 			color: Color.White,
 			intensity: 0.2,
-			drawsToColor: false,
+			size: 400,
+			drawsToColor: false
 		});
 
 		const interactiveItem1 = new Entity();
@@ -157,6 +133,35 @@ export class ClientTraitor extends Space {
 	}
 }
 
+const addFakePlayers = (count = 3) => {
+	for (let index = 0; index < count; index++) {
+		const player = new Entity();
+		const playerSprite = Sprite.from('idle-1.png');
+		const colorMatrixFilter = new filters.ColorMatrixFilter();
+		colorMatrixFilter.hue(Math.random() * 360, true);
+		playerSprite.filters = [colorMatrixFilter];
+		playerSprite.anchor.set(0.5);
+
+		// playerSprite.mask =
+		player.add(Transform, {
+			position: new Vector3(Random.float(400, 2000), Random.float(200, 500))
+		});
+
+		player.add(playerSprite);
+		player.add(ArcadeCollisionShape.Circle(25));
+		player.add(ArcadePhysics);
+		player.add(AnimatedPlayer);
+		player.add(Player);
+
+		engine.addEntity(player);
+	}
+};
+
 const engine = new TickerEngine(60);
+
+setTimeout(() => {
+	addFakePlayers(8);
+}, 1000);
+
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
