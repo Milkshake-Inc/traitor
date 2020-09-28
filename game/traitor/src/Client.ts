@@ -12,6 +12,7 @@ import ArcadeCollisionSystem from '@ecs/plugins/physics/arcade/systems/ArcadeCol
 import ArcadePhysicsSystem from '@ecs/plugins/physics/arcade/systems/ArcadePhysicsSystem';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
 import { Interactable } from '@ecs/plugins/render/2d/components/Interactable';
+import UIDisplayObject from '@ecs/plugins/render/2d/components/UIDisplayObject';
 import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSystem';
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
@@ -124,6 +125,13 @@ export class ClientTraitor extends Space {
 		interactiveItem2.add(Interactable);
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
+
+		const ui = new Entity();
+		ui.add(Transform);
+		ui.add(Sprite.from('idle-1.png'))
+		ui.add(UIDisplayObject)
+
+		this.addEntities(ui);
 
 		setTimeout(() => {
 			const event = useSimpleEvents();
