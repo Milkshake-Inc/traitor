@@ -1,17 +1,13 @@
+import { Entity } from "@ecs/core/Entity";
 import { useQueries, useSimpleEvents, useState } from "@ecs/core/helpers";
 import { all, not } from "@ecs/core/Query";
 import { System } from "@ecs/core/System";
-import Transform from "@ecs/plugins/math/Transform";
-import { Sprite } from "pixi.js";
+import Color from "@ecs/plugins/math/Color";
+import { Player } from "../components/Player";
 import { CrewRole } from "../components/roles/CrewRole";
 import { JesterRole } from "../components/roles/JesterRole";
 import { TraitorRole } from "../components/roles/TraitorRole";
 import { shuffleArray } from "../utils/ShuffleArray";
-import { AnimatedPlayer } from "./PlayerAnimationSystem";
-import { Player } from "../components/Player";
-import Text from "@ecs/plugins/render/2d/components/Text";
-import Color from "@ecs/plugins/math/Color";
-import { Entity } from "@ecs/core/Entity";
 
 type RoleConfiguration = {
     numberTraitors: number;

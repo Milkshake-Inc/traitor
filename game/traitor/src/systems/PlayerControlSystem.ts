@@ -5,8 +5,8 @@ import Input from '@ecs/plugins/input/components/Input';
 import { Key } from '@ecs/plugins/input/Control';
 import Keyboard from '@ecs/plugins/input/Keyboard';
 import Transform from '@ecs/plugins/math/Transform';
-import { Sprite } from 'pixi.js';
 import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics';
+import { LocalPlayer } from '../components/LocalPlayer';
 
 export class PlayerControlSystem extends System {
 	readonly PLAYER_SPEED = 0.3;
@@ -18,13 +18,13 @@ export class PlayerControlSystem extends System {
 			up: Keyboard.key(Key.W),
 			down: Keyboard.key(Key.S),
 			left: Keyboard.key(Key.A),
-			right: Keyboard.key(Key.D),
+			right: Keyboard.key(Key.D)
 		})
 	);
 
 	protected queries = useQueries(this, {
-		player: all(Transform, Sprite, ArcadePhysics)
-	})
+		player: all(Transform, LocalPlayer, ArcadePhysics)
+	});
 
 	update(dt: number) {
 		for (const player of this.queries.player) {
@@ -32,11 +32,11 @@ export class PlayerControlSystem extends System {
 
 			velocity.set(0, 0, 0);
 
-			if(this.inputs.state.right.down) velocity.x += this.PLAYER_SPEED;
-			if(this.inputs.state.left.down) velocity.x -= this.PLAYER_SPEED;
+			if (this.inputs.state.right.down) velocity.x += this.PLAYER_SPEED;
+			if (this.inputs.state.left.down) velocity.x -= this.PLAYER_SPEED;
 
-			if(this.inputs.state.up.down) velocity.y -= this.PLAYER_SPEED;
-			if(this.inputs.state.down.down) velocity.y += this.PLAYER_SPEED;
+			if (this.inputs.state.up.down) velocity.y -= this.PLAYER_SPEED;
+			if (this.inputs.state.down.down) velocity.y += this.PLAYER_SPEED;
 		}
 	}
 }
