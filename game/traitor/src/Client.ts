@@ -32,6 +32,7 @@ import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
 import { ButtonMinigame } from './spaces/ButtonMinigame';
+import { MinigameLauncher } from './components/MinigameLauncher';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -127,14 +128,14 @@ export class ClientTraitor extends Space {
 		interactiveSprite1.anchor.set(0.5);
 		interactiveItem1.add(interactiveSprite1);
 		interactiveItem1.add(Transform, { position: new Vector3(500, 600) });
-		interactiveItem1.add(Interactable);
+		interactiveItem1.add(MinigameLauncher);
 
 		const interactiveItem2 = new Entity();
 		const interactiveSprite2 = Sprite.from(Texture.WHITE);
 		interactiveSprite2.anchor.set(0.5);
 		interactiveItem2.add(interactiveSprite2);
 		interactiveItem2.add(Transform, { position: new Vector3(300, 300) });
-		interactiveItem2.add(Interactable);
+		interactiveItem2.add(MinigameLauncher);
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
