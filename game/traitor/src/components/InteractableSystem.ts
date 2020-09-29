@@ -1,4 +1,4 @@
-import { useQueries, useState } from "@ecs/core/helpers";
+import { useQueries, useState, useSimpleEvents } from "@ecs/core/helpers";
 import { all } from "@ecs/core/Query";
 import { System } from "@ecs/core/System";
 import Input from "@ecs/plugins/input/components/Input";
@@ -8,6 +8,7 @@ import Transform from "@ecs/plugins/math/Transform";
 import ArcadePhysics from "@ecs/plugins/physics/arcade/components/ArcadePhysics";
 import { Interactable } from "@ecs/plugins/render/2d/components/Interactable";
 import { Sprite } from "pixi.js";
+import { LAUNCH_MINIGAME_EVENT } from "../Client";
 
 export class InteractableSystem extends System {
 
@@ -22,7 +23,9 @@ export class InteractableSystem extends System {
         player: all(Transform, Sprite, ArcadePhysics),
         interactables: all(Interactable)
     });
-    
+
+    protected events = useSimpleEvents();
+
     update(dt: number) {
         const playerTransform = this.queries.player.first.get(Transform);
 
@@ -32,7 +35,10 @@ export class InteractableSystem extends System {
             const sprite = interactable.get(Sprite);
             if (playerTransform.position.distance(interactable.get(Transform).position) < 60) {
                 sprite.tint = 0x00FF00;
-                if(this.inputs.state.interact.down) sprite.tint = 0xFF0000;
+                if(this.inputs.state.interact.once) {
+                    sprite.tint = 0xFF0000;
+                    this.events.emit(LAUNCH_MINIGAME_EVENT)
+                }
             } else {
                 sprite.tint = 0xFFFFFF;
             }

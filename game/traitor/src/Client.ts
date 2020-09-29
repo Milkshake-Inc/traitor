@@ -1,8 +1,5 @@
-import { Engine } from '@ecs/core/Engine';
 import { Entity } from '@ecs/core/Entity';
 import { useSimpleEvents } from '@ecs/core/helpers';
-import { useEntity } from '@ecs/core/helpers/useEntity';
-import { System } from '@ecs/core/System';
 import TickerEngine from '@ecs/core/TickerEngine';
 import { InputSystem } from '@ecs/plugins/input/systems/InputSystem';
 import Color from '@ecs/plugins/math/Color';
@@ -20,7 +17,7 @@ import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSyste
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
-import { Container, filters, Graphics, Loader, Sprite, Texture } from 'pixi.js';
+import { filters, Loader, Sprite, Texture } from 'pixi.js';
 import { InteractableSystem } from './components/InteractableSystem';
 import { Light } from './components/Light';
 import { LocalPlayer } from './components/LocalPlayer';
@@ -34,6 +31,7 @@ import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
 import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
+import { ButtonMinigame } from './spaces/ButtonMinigame';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -70,13 +68,12 @@ export class ClientTraitor extends Space {
 
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
-		this.addSystem(new PlayerMaskSystems())
+		this.addSystem(new PlayerMaskSystems());
 		// this.addSystem(new ArcadePhysicsDebugger())
-
 
 		const shipBasement = new Entity();
 		shipBasement.add(Transform);
-		shipBasement.add(Sprite.from(Assets.Deck2),{
+		shipBasement.add(Sprite.from(Assets.Deck2), {
 			alpha: 0.8
 		});
 
@@ -141,18 +138,10 @@ export class ClientTraitor extends Space {
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
-		const ui = new Entity();
-		ui.add(Transform);
-		ui.add(Sprite.from('idle-1.png'))
-		ui.add(UIDisplayObject)
-
-		this.addEntities(ui);
-
 		setTimeout(() => {
 			const event = useSimpleEvents();
 			event.emit(RoleSystem.ASSIGN_ROLE_EVENT);
 		}, 2000);
-
 	}
 }
 
@@ -189,46 +178,21 @@ setTimeout(() => {
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
 
-class ButtonMinigame extends Space {
-	constructor(engine: Engine) {
-		super(engine, true)
+export const LAUNCH_MINIGAME_EVENT = "LAUNCH_MINIGAME";
+export const CLOSE_MINIGAME_EVENT = "CLOSE_MINIGAME";
 
-		this.addSystem(new ButtonMinigameSystem())
-	}
-}
+const buttonMinigame = new ButtonMinigame(engine);
 
-class ButtonMinigameSystem extends System {
+const events = useSimpleEvents();
 
-	protected container = new Container();
+events.on(LAUNCH_MINIGAME_EVENT, () => {
+	buttonMinigame.open();
+})
 
-	constructor() {
-		super()
+events.on(CLOSE_MINIGAME_EVENT, () => {
+	buttonMinigame.close();
+})
 
-		useEntity(this, (entity) => {
-			entity.add(Transform, {
-				x: 1280 / 2,
-				y: 720 / 2,
-			});
-			entity.add(this.container)
-			entity.add(UIDisplayObject);
-		});
 
-		const background = new Graphics();
-		background.pivot.set(250, 250);
-		background.beginFill(Color.Gray);
-		background.drawRect(0, 0, 500, 500);
 
-		const button = new Graphics();
-		button.beginFill(Color.Tomato);
-		button.drawCircle(0, 0, 200);
-		button.interactive = button.buttonMode = true;
-		button.on("click", () => {
-			console.log("Clicky")
-		})
 
-		this.container.addChild(background);
-		this.container.addChild(button);
-	}
-}
-
-new ButtonMinigame(engine);
