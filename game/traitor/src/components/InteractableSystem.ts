@@ -7,8 +7,8 @@ import Keyboard from "@ecs/plugins/input/Keyboard";
 import Transform from "@ecs/plugins/math/Transform";
 import ArcadePhysics from "@ecs/plugins/physics/arcade/components/ArcadePhysics";
 import { Sprite } from "pixi.js";
-import { LAUNCH_MINIGAME_EVENT } from "../Client";
 import { MinigameLauncher } from "./MinigameLauncher";
+import { Events } from "../utils/Constants";
 
 export class InteractableSystem extends System {
 
@@ -37,7 +37,7 @@ export class InteractableSystem extends System {
                 sprite.tint = 0x00FF00;
                 if(this.inputs.state.interact.once) {
                     sprite.tint = 0xFF0000;
-                    this.events.emit(LAUNCH_MINIGAME_EVENT)
+                    this.events.emit(Events.LAUNCH_MINIGAME_EVENT)
                 }
             } else {
                 sprite.tint = 0xFFFFFF;

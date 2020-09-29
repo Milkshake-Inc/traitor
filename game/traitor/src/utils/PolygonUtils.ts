@@ -1,9 +1,8 @@
 import { PolygonFile } from './PolygonFile';
-import { PolygonShapeData } from '../components/PolygonData';
-import { Vector2 } from '@ecs/plugins/math/Vector';
+import { Polygons } from '@ecs/plugins/math/Polygon';
 
-export const convertToPolygonShape = (polygonFile: PolygonFile): PolygonShapeData => {
-    const polygonShapes = new PolygonShapeData();
+export const convertToPolygonShape = (polygonFile: PolygonFile): Polygons => {
+    const polygonShapes = new Polygons();
 
 	polygonFile.prefab.fixtures.forEach(fixture => {
 		fixture.vertices.forEach(quad => {
@@ -17,23 +16,3 @@ export const convertToPolygonShape = (polygonFile: PolygonFile): PolygonShapeDat
 
 	return polygonShapes;
 };
-
-export type Line = { a: Vector2; b: Vector2 };
-
-export const convertToLines = (shapeData: PolygonShapeData): Line[] => {
-	const lines = [];
-
-	shapeData.polygons.forEach(polygon => {
-		for (let index = 0; index < polygon.length; index++) {
-
-			const last = (index + 1) % (polygon.length);
-
-			lines.push({
-				a: polygon[index],
-				b: polygon[last],
-			})
-		}
-	})
-
-	return lines;
-}

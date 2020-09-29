@@ -7,7 +7,7 @@ import { Player } from "../components/Player";
 import { CrewRole } from "../components/roles/CrewRole";
 import { JesterRole } from "../components/roles/JesterRole";
 import { TraitorRole } from "../components/roles/TraitorRole";
-import { shuffleArray } from "../utils/ShuffleArray";
+import Random from "@ecs/plugins/math/Random";
 
 type RoleConfiguration = {
     numberTraitors: number;
@@ -76,7 +76,7 @@ export class RoleSystem extends System {
 
     private assignRoles() {
 
-        const allPlayers = shuffleArray([...this.queries.playersWithoutRole.entities]);
+        const allPlayers = Random.shuffleArray([...this.queries.playersWithoutRole.entities]);
         const numberOfTraitors = this.state.configuration.numberTraitors;
         const numberOfJesters = this.state.configuration.numberJesters;
 

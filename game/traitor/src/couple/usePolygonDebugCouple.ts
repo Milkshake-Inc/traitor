@@ -4,12 +4,12 @@ import Color from '@ecs/plugins/math/Color';
 import Transform from '@ecs/plugins/math/Transform';
 import { usePixiCouple } from '@ecs/plugins/render/2d/couples/PixiCouple';
 import { Graphics } from 'pixi.js';
-import { PolygonShapeData } from '../components/PolygonData';
+import { Polygons } from '@ecs/plugins/math/Polygon';
 
 export const usePolygonDebugCouple = (system: System) =>
-	usePixiCouple<Graphics>(system, all(Transform, PolygonShapeData), {
+	usePixiCouple<Graphics>(system, all(Transform, Polygons), {
 		onCreate: entity => {
-			const polygonData = entity.get(PolygonShapeData);
+			const polygonData = entity.get(Polygons);
 
 			const graphic = new Graphics();
 

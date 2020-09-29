@@ -4,7 +4,7 @@ import { System } from '@ecs/core/System';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
 import { Sprite, Text } from 'pixi.js';
 import { Player } from '../components/Player';
-import { BasicLightingState } from './BasicLightingSystem';
+import { BasicLightingState } from '@ecs/plugins/lighting/systems/LightingSystem';
 import { NamePlate } from '../components/NamePlate';
 
 export class PlayerMaskSystems extends System {

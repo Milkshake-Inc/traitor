@@ -11,19 +11,19 @@ import ArcadePhysics from '@ecs/plugins/physics/arcade/components/ArcadePhysics'
 import ArcadeCollisionSystem from '@ecs/plugins/physics/arcade/systems/ArcadeCollisionSystem';
 import ArcadePhysicsSystem from '@ecs/plugins/physics/arcade/systems/ArcadePhysicsSystem';
 import Camera from '@ecs/plugins/render/2d/components/Camera';
-import { Interactable } from '@ecs/plugins/render/2d/components/Interactable';
-import UIDisplayObject from '@ecs/plugins/render/2d/components/UIDisplayObject';
 import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSystem';
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
 import { filters, Loader, Sprite, Texture } from 'pixi.js';
+import { Light } from '../../../ecs/src/engine/plugins/lighting/components/Light';
+import { ShadowCaster } from '../../../ecs/src/engine/plugins/lighting/components/ShadowCaster';
+import { BasicLightingSystem } from '../../../ecs/src/engine/plugins/lighting/systems/LightingSystem';
 import { InteractableSystem } from './components/InteractableSystem';
-import { Light } from './components/Light';
 import { LocalPlayer } from './components/LocalPlayer';
+import { MinigameLauncher } from './components/MinigameLauncher';
 import { Player } from './components/Player';
-import { ShadowCaster } from './components/ShadowCaster';
-import { BasicLightingSystem } from './systems/BasicLightingSystem';
+import { ButtonMinigame } from './spaces/ButtonMinigame';
 import { AnimatedPlayer, PlayerAnimationSystem } from './systems/PlayerAnimationSystem';
 import { PlayerControlSystem } from './systems/PlayerControlSystem';
 import { PlayerMaskSystems } from './systems/PlayerMaskSystem';
@@ -31,8 +31,7 @@ import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
 import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
-import { ButtonMinigame } from './spaces/ButtonMinigame';
-import { MinigameLauncher } from './components/MinigameLauncher';
+import { Events } from './utils/Constants';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -70,23 +69,13 @@ export class ClientTraitor extends Space {
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
 		this.addSystem(new PlayerMaskSystems());
-		// this.addSystem(new ArcadePhysicsDebugger())
-
-		const shipBasement = new Entity();
-		shipBasement.add(Transform);
-		shipBasement.add(Sprite.from(Assets.Deck2), {
-			alpha: 0.8
-		});
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
-
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
 
 		const ship = new Entity();
 		ship.add(Transform);
-		ship.add(Sprite.from(Assets.Deck3), {
-			// alpha: 0
-		});
+		ship.add(Sprite.from(Assets.Ship));
 		ship.add(polygonShape);
 		ship.add(ShadowCaster);
 
@@ -155,7 +144,6 @@ const addFakePlayers = (count = 3) => {
 		playerSprite.filters = [colorMatrixFilter];
 		playerSprite.anchor.set(0.5);
 
-		// playerSprite.mask =
 		player.add(Transform, {
 			position: new Vector3(Random.float(400, 2000), Random.float(200, 500))
 		});
@@ -179,21 +167,15 @@ setTimeout(() => {
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
 
-export const LAUNCH_MINIGAME_EVENT = "LAUNCH_MINIGAME";
-export const CLOSE_MINIGAME_EVENT = "CLOSE_MINIGAME";
 
 const buttonMinigame = new ButtonMinigame(engine);
 
 const events = useSimpleEvents();
 
-events.on(LAUNCH_MINIGAME_EVENT, () => {
+events.on(Events.LAUNCH_MINIGAME_EVENT, () => {
 	buttonMinigame.open();
 })
 
-events.on(CLOSE_MINIGAME_EVENT, () => {
+events.on(Events.CLOSE_MINIGAME_EVENT, () => {
 	buttonMinigame.close();
 })
-
-
-
-

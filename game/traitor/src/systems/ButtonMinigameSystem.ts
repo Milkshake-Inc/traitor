@@ -5,7 +5,7 @@ import Transform from '@ecs/plugins/math/Transform';
 import UIDisplayObject from '@ecs/plugins/render/2d/components/UIDisplayObject';
 import { Container, Graphics } from 'pixi.js';
 import { useSimpleEvents } from '@ecs/core/helpers';
-import { CLOSE_MINIGAME_EVENT } from '../Client';
+import { Events } from '../utils/Constants';
 
 export class ButtonMinigameSystem extends System {
 
@@ -35,7 +35,7 @@ export class ButtonMinigameSystem extends System {
 		button.drawCircle(0, 0, 200);
 		button.interactive = button.buttonMode = true;
 		button.on("click", () => {
-			this.events.emit(CLOSE_MINIGAME_EVENT);
+			this.events.emit(Events.CLOSE_MINIGAME_EVENT);
 		})
 
 		this.container.addChild(background);
