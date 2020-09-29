@@ -14,7 +14,7 @@ import CameraRenderSystem from '@ecs/plugins/render/2d/systems/CameraRenderSyste
 import RenderSystem from '@ecs/plugins/render/2d/systems/RenderSystem';
 import Space from '@ecs/plugins/space/Space';
 import { LoadPixiAssets } from '@ecs/plugins/tools/PixiHelper';
-import { filters, Loader, Sprite } from 'pixi.js';
+import { filters, Loader, Sprite, Container, Graphics } from 'pixi.js';
 import { Light } from './components/Light';
 import { Player } from './components/Player';
 import { ShadowCaster } from './components/ShadowCaster';
@@ -29,10 +29,16 @@ import { LocalPlayer } from './components/LocalPlayer';
 import { PlayerMaskSystems } from './systems/PlayerMaskSystem';
 import Random from '@ecs/plugins/math/Random';
 import UIDisplayObject from '@ecs/plugins/render/2d/components/UIDisplayObject';
+import { Engine } from '@ecs/core/Engine';
+import { System } from '@ecs/core/System';
+import { useEntity } from '@ecs/core/helpers/useEntity';
 
 export const Assets = {
 	Player: 'assets/player.json',
 	Ship: 'assets/prefab.png',
+	Deck1: 'assets/deck_1.png',
+	Deck2: 'assets/deck_2.png',
+	Deck3: 'assets/deck_3.png',
 	ShipLighting: 'assets/ship_lighting.json',
 	ShipCollision: 'assets/ship_collision.json',
 	MaskTest: 'assets/mask_test.png'
@@ -64,13 +70,22 @@ export class ClientTraitor extends Space {
 		this.addSystem(new PlayerMaskSystems())
 		// this.addSystem(new ArcadePhysicsDebugger())
 
+
+		const shipBasement = new Entity();
+		shipBasement.add(Transform);
+		shipBasement.add(Sprite.from(Assets.Deck2),{
+			alpha: 0.8
+		});
+
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
 
 		const ship = new Entity();
 		ship.add(Transform);
-		ship.add(Sprite.from(Assets.Ship));
+		ship.add(Sprite.from(Assets.Deck3), {
+			// alpha: 0
+		});
 		ship.add(polygonShape);
 		ship.add(ShadowCaster);
 
@@ -155,3 +170,47 @@ setTimeout(() => {
 
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
+
+class ButtonMinigame extends Space {
+	constructor(engine: Engine) {
+		super(engine, true)
+
+		this.addSystem(new ButtonMinigameSystem())
+	}
+}
+
+class ButtonMinigameSystem extends System {
+
+	protected container = new Container();
+
+	constructor() {
+		super()
+
+		useEntity(this, (entity) => {
+			entity.add(Transform, {
+				x: 1280 / 2,
+				y: 720 / 2,
+			});
+			entity.add(this.container)
+			entity.add(UIDisplayObject);
+		});
+
+		const background = new Graphics();
+		background.pivot.set(250, 250);
+		background.beginFill(Color.Gray);
+		background.drawRect(0, 0, 500, 500);
+
+		const button = new Graphics();
+		button.beginFill(Color.Tomato);
+		button.drawCircle(0, 0, 200);
+		button.interactive = button.buttonMode = true;
+		button.on("click", () => {
+			console.log("Clicky")
+		})
+
+		this.container.addChild(background);
+		this.container.addChild(button);
+	}
+}
+
+new ButtonMinigame(engine);
