@@ -19,7 +19,7 @@ import { filters, Loader, Sprite, Texture } from 'pixi.js';
 import { Light } from '../../../ecs/src/engine/plugins/lighting/components/Light';
 import { ShadowCaster } from '../../../ecs/src/engine/plugins/lighting/components/ShadowCaster';
 import { BasicLightingSystem } from '../../../ecs/src/engine/plugins/lighting/systems/LightingSystem';
-import { InteractableSystem } from './components/InteractableSystem';
+import { MinigameLauncherSystem } from './systems/MinigameLauncherSystem';
 import { LocalPlayer } from './components/LocalPlayer';
 import { MinigameLauncher } from './components/MinigameLauncher';
 import { Player } from './components/Player';
@@ -31,7 +31,7 @@ import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
 import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
-import { Events } from './utils/Constants';
+import { Events, Minigames } from './utils/Constants';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -64,7 +64,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new ArcadePhysicsSystem());
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new RoleSystem());
-		this.addSystem(new InteractableSystem());
+		this.addSystem(new MinigameLauncherSystem());
 
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
@@ -117,14 +117,14 @@ export class ClientTraitor extends Space {
 		interactiveSprite1.anchor.set(0.5);
 		interactiveItem1.add(interactiveSprite1);
 		interactiveItem1.add(Transform, { position: new Vector3(500, 600) });
-		interactiveItem1.add(MinigameLauncher);
+		interactiveItem1.add(new MinigameLauncher(Minigames.BUTTON_PRESS));
 
 		const interactiveItem2 = new Entity();
 		const interactiveSprite2 = Sprite.from(Texture.WHITE);
 		interactiveSprite2.anchor.set(0.5);
 		interactiveItem2.add(interactiveSprite2);
 		interactiveItem2.add(Transform, { position: new Vector3(300, 300) });
-		interactiveItem2.add(MinigameLauncher);
+		interactiveItem2.add(new MinigameLauncher(Minigames.FEED_POLY));
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
@@ -168,11 +168,13 @@ new ClientTraitor(engine, true);
 console.log('🎉 Client');
 
 
+// This logic should be moved to system - Maybe move to MinigameLauncher?
 const buttonMinigame = new ButtonMinigame(engine);
 
 const events = useSimpleEvents();
 
-events.on(Events.LAUNCH_MINIGAME_EVENT, () => {
+events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Minigames) => {
+	console.log(`Wanting to open: ${Minigames[minigame]}`);
 	buttonMinigame.open();
 })
 
