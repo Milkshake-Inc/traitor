@@ -42,7 +42,8 @@ export const Assets = {
 	Deck3: 'assets/deck_3.png',
 	ShipLighting: 'assets/ship_lighting.json',
 	ShipCollision: 'assets/ship_collision.json',
-	MaskTest: 'assets/mask_test.png'
+	MaskTest: 'assets/mask_test.png',
+	Parrot: 'assets/parrot.png',
 };
 
 export class ClientTraitor extends Space {
@@ -96,9 +97,11 @@ export class ClientTraitor extends Space {
 
 		const player = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
+
 		playerSprite.anchor.set(0.5);
 		player.add(Transform, {
-			position: new Vector3(400, 500)
+			position: new Vector3(400, 500),
+			// scale: new Vector3(0.2, 0.2)
 		});
 		player.add(playerSprite);
 		player.add(ArcadeCollisionShape.Circle(25));
@@ -122,10 +125,14 @@ export class ClientTraitor extends Space {
 		interactiveItem1.add(new MinigameLauncher(Tasks.BUTTON_PRESS));
 
 		const interactiveItem2 = new Entity();
-		const interactiveSprite2 = Sprite.from(Texture.WHITE);
+		const interactiveSprite2 = Sprite.from(Assets.Parrot);
 		interactiveSprite2.anchor.set(0.5);
+		interactiveSprite2.scale.set(0.2, 0.2);
 		interactiveItem2.add(interactiveSprite2);
-		interactiveItem2.add(Transform, { position: new Vector3(300, 300) });
+		interactiveItem2.add(Transform, {
+			position: new Vector3(300, 300),
+			scale: new Vector3(0.1, 0.1)
+		});
 		interactiveItem2.add(new MinigameLauncher(Tasks.FEED_POLY));
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);

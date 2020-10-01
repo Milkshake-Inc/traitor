@@ -24,7 +24,7 @@ export class TaskSystem extends System {
     private assignTasks() {
         this.queries.crewPlayers.forEach((entity) => {
             entity.add(new TaskList([
-                Tasks.BUTTON_PRESS
+                Tasks.FEED_POLY
             ]));
         })
     }
@@ -32,11 +32,16 @@ export class TaskSystem extends System {
     public update(dt: number) {
         super.update(dt);
 
-        this.queries.tasks.forEach(entity => {
-            const player = entity.get(Player)
-            const taskList = entity.get(TaskList)
+        // let completeTasks = 0;
+        // let totalTasks = 0;
 
-            console.log(`${player.name} - ${taskList.completeTasks.length}/${taskList.tasks.length}`)
-        });
+        // this.queries.tasks.forEach(entity => {
+        //     const taskList = entity.get(TaskList)
+
+        //     completeTasks += taskList.completeTasks.length;
+        //     totalTasks += taskList.tasks.length;
+        // });
+
+        // console.log(`${completeTasks}/${totalTasks}`);
     }
 }

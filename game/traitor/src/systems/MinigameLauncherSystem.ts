@@ -8,6 +8,7 @@ import Transform from "@ecs/plugins/math/Transform";
 import { LocalPlayer } from "../components/LocalPlayer";
 import { MinigameLauncher } from "../components/MinigameLauncher";
 import { Events } from "../utils/Constants";
+import { TaskList } from "../components/TaskList";
 
 export class MinigameLauncherSystem extends System {
 
@@ -26,13 +27,21 @@ export class MinigameLauncherSystem extends System {
     protected events = useSimpleEvents();
 
     update(dt: number) {
-        const playerTransform = this.queries.player.first.get(Transform);
+        const player = this.queries.player.first;
+
+        if(!player || !player.has(TaskList)) return;
+
+        const playerTransform = player.get(Transform);
+        const tasks = player.get(TaskList);
 
         // This could be sped up with a quad tree like system. Find which quad the player is in and if any launchers are also in the quad.
         // Saying which "room" the player is in as each quad, would also allow a map like system like in Among Us and it could stop players interacting through walls.
         for (const launcher of this.queries.launchers) {
             const transform = launcher.get(Transform)
-            if (playerTransform.position.distance(transform) < 60) {
+            const minigameLauncher = launcher.get(MinigameLauncher)
+
+            if (tasks.hasIncompleteTask(minigameLauncher.minigame) && playerTransform.position.distance(transform) < 120) {
+
                 if(this.inputs.state.interact.once) {
                     const { minigame } = launcher.get(MinigameLauncher)
                     this.events.emit(Events.LAUNCH_MINIGAME_EVENT, minigame);
