@@ -31,7 +31,8 @@ import { PlayerNamePlateSystems } from './systems/PlayerNamePlateSystem';
 import { RoleSystem } from './systems/RoleSystem';
 import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
-import { Events, Minigames } from './utils/Constants';
+import { Events, Tasks } from './utils/Constants';
+import { TaskSystem } from './systems/TaskSystem';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -69,6 +70,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
 		this.addSystem(new PlayerMaskSystems());
+		this.addSystem(new TaskSystem());
 
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
@@ -117,20 +119,20 @@ export class ClientTraitor extends Space {
 		interactiveSprite1.anchor.set(0.5);
 		interactiveItem1.add(interactiveSprite1);
 		interactiveItem1.add(Transform, { position: new Vector3(500, 600) });
-		interactiveItem1.add(new MinigameLauncher(Minigames.BUTTON_PRESS));
+		interactiveItem1.add(new MinigameLauncher(Tasks.BUTTON_PRESS));
 
 		const interactiveItem2 = new Entity();
 		const interactiveSprite2 = Sprite.from(Texture.WHITE);
 		interactiveSprite2.anchor.set(0.5);
 		interactiveItem2.add(interactiveSprite2);
 		interactiveItem2.add(Transform, { position: new Vector3(300, 300) });
-		interactiveItem2.add(new MinigameLauncher(Minigames.FEED_POLY));
+		interactiveItem2.add(new MinigameLauncher(Tasks.FEED_POLY));
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
 		setTimeout(() => {
 			const event = useSimpleEvents();
-			event.emit(RoleSystem.ASSIGN_ROLE_EVENT);
+			event.emit(Events.ASSIGN_ROLE_AND_TASK_EVENT);
 		}, 2000);
 	}
 }
@@ -173,8 +175,8 @@ const buttonMinigame = new ButtonMinigame(engine);
 
 const events = useSimpleEvents();
 
-events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Minigames) => {
-	console.log(`Wanting to open: ${Minigames[minigame]}`);
+events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Tasks) => {
+	console.log(`Wanting to open: ${Tasks[minigame]}`);
 	buttonMinigame.open();
 })
 

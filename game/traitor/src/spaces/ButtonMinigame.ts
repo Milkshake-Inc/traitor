@@ -1,12 +1,16 @@
 import { Engine } from "@ecs/core/Engine"
 import { Entity } from "@ecs/core/Entity"
-import { useSimpleEvents } from "@ecs/core/helpers"
+import { useSimpleEvents, useQueries } from "@ecs/core/helpers"
 import Color from "@ecs/plugins/math/Color"
 import Transform from "@ecs/plugins/math/Transform"
 import { Interactable } from "@ecs/plugins/render/2d/components/Interactable"
 import UIDisplayObject from "@ecs/plugins/render/2d/components/UIDisplayObject"
 import Space from "@ecs/plugins/space/Space"
 import { Graphics } from "pixi.js"
+import { all } from "@ecs/core/Query"
+import { LocalPlayer } from "../components/LocalPlayer"
+import { TaskList } from "../components/TaskList"
+import { Tasks } from "../utils/Constants"
 
 export const LAUNCH_MINIGAME_EVENT = "LAUNCH_MINIGAME";
 export const CLOSE_MINIGAME_EVENT = "CLOSE_MINIGAME";
@@ -19,6 +23,10 @@ export class ButtonMinigame extends Space {
 	}
 
 	setup() {
+		const query = useQueries(this.worldEngine, {
+			localPlayer: all(LocalPlayer, TaskList)
+		});
+
 		const background = new Entity();
 		background.add(Transform, {
 				x: 1280 / 2,
@@ -46,6 +54,12 @@ export class ButtonMinigame extends Space {
 		buttonGraphics.drawCircle(0, 0, 200);
 		buttonGraphics.on("click", () => {
 			this.events.emit(CLOSE_MINIGAME_EVENT, this);
+
+			const localPlayer = query.localPlayer.first;
+			const taskList = localPlayer.get(TaskList);
+
+			taskList.completeTask(Tasks.BUTTON_PRESS);
+
 		});
 		button.add(buttonGraphics);
 

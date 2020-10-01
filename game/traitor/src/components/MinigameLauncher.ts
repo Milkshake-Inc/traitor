@@ -1,9 +1,9 @@
-import { Minigames } from "../utils/Constants";
+import { Tasks } from "../utils/Constants";
 
 export class MinigameLauncher {
-    public minigame: Minigames;
+    public minigame: Tasks;
 
-    constructor(minigame: Minigames) {
+    constructor(minigame: Tasks) {
         this.minigame = minigame;
     }
 }

@@ -8,6 +8,7 @@ import { CrewRole } from "../components/roles/CrewRole";
 import { JesterRole } from "../components/roles/JesterRole";
 import { TraitorRole } from "../components/roles/TraitorRole";
 import Random from "@ecs/plugins/math/Random";
+import { Events } from "../utils/Constants";
 
 type RoleConfiguration = {
     numberTraitors: number;
@@ -51,7 +52,6 @@ export const getRoleTextColor = (entity: CrewRole | TraitorRole | JesterRole | n
 }
 
 export class RoleSystem extends System {
-    public static ASSIGN_ROLE_EVENT = "ASSIGN_ROLE_EVENT";
 
     protected state: RoleState;
 
@@ -71,7 +71,7 @@ export class RoleSystem extends System {
         this.state = useState(this, new RoleState(configuration));
 
         const events = useSimpleEvents();
-        events.addListener(RoleSystem.ASSIGN_ROLE_EVENT, this.assignRoles.bind(this));
+        events.addListener(Events.ASSIGN_ROLE_AND_TASK_EVENT, this.assignRoles.bind(this));
     }
 
     private assignRoles() {
