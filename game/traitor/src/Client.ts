@@ -37,6 +37,8 @@ import { Events, Tasks } from './utils/Constants';
 import { TaskSystem } from './systems/TaskSystem';
 import BaseMinigameSpace from './spaces/BaseMinigameSpace';
 import WebFont from 'webfontloader';
+import { ArcadePhysicsDebugger } from './systems/PolygonRendererSystem';
+import { Engine } from '@ecs/core/Engine';
 
 
 WebFont.load({
@@ -84,6 +86,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new PlayerMaskSystems());
 		this.addSystem(new TaskSystem());
 
+
 		const shipPolygonFile: PolygonFile = Loader.shared.resources[Assets.ShipCollision].data;
 		const polygonShape = convertToPolygonShape(shipPolygonFile);
 
@@ -111,7 +114,7 @@ export class ClientTraitor extends Space {
 
 		playerSprite.anchor.set(0.5);
 		player.add(Transform, {
-			position: new Vector3(400, 500),
+			position: new Vector3(1000, 500),
 			// scale: new Vector3(0.2, 0.2)
 		});
 		player.add(playerSprite);
@@ -156,6 +159,8 @@ export class ClientTraitor extends Space {
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
+		this.addEntities(...addFakePlayers());
+
 		setTimeout(() => {
 			const event = useSimpleEvents();
 			event.emit(Events.ASSIGN_ROLE_EVENT);
@@ -164,34 +169,35 @@ export class ClientTraitor extends Space {
 	}
 }
 
-const addFakePlayers = (count = 3) => {
+const addFakePlayers = (count = 6) => {
+	const entities = [];
+
 	for (let index = 0; index < count; index++) {
-		const player = new Entity();
+		const bot = new Entity();
 		const playerSprite = Sprite.from('idle-1.png');
 		const colorMatrixFilter = new filters.ColorMatrixFilter();
 		colorMatrixFilter.hue(Math.random() * 360, true);
 		playerSprite.filters = [colorMatrixFilter];
 		playerSprite.anchor.set(0.5);
 
-		player.add(Transform, {
+
+		bot.add(playerSprite);
+		bot.add(Transform, {
 			position: new Vector3(Random.float(400, 2000), Random.float(200, 500))
 		});
+		bot.add(ArcadePhysics);
+		bot.add(ArcadeCollisionShape.Circle(25));
 
-		player.add(playerSprite);
-		player.add(ArcadeCollisionShape.Circle(25));
-		player.add(ArcadePhysics);
-		player.add(AnimatedPlayer);
-		player.add(Player);
+		bot.add(AnimatedPlayer);
+		bot.add(Player);
 
-		engine.addEntity(player);
+		entities.push(bot);
 	}
+
+	return entities;
 };
 
 const engine = new TickerEngine(60);
-
-setTimeout(() => {
-	addFakePlayers(8);
-}, 1000);
 
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
