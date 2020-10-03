@@ -1,3 +1,5 @@
+import { render, h } from 'preact';
+import App from './ui/App';
 import { Entity } from '@ecs/core/Entity';
 import { useSimpleEvents } from '@ecs/core/helpers';
 import TickerEngine from '@ecs/core/TickerEngine';
@@ -34,6 +36,14 @@ import { convertToPolygonShape } from './utils/PolygonUtils';
 import { Events, Tasks } from './utils/Constants';
 import { TaskSystem } from './systems/TaskSystem';
 import BaseMinigameSpace from './spaces/BaseMinigameSpace';
+import WebFont from 'webfontloader';
+
+
+WebFont.load({
+	google: {
+		families: ['Quicksand:700']
+	}
+});
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -197,3 +207,7 @@ events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: BaseMinigameSpace, task: Task
 events.on(Events.CLOSE_MINIGAME_EVENT, (minigame: BaseMinigameSpace) => {
 	minigame.close();
 });
+
+const ui = document.createElement('div');
+document.body.prepend(ui);
+render(h(App, { engine }), ui);

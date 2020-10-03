@@ -59,7 +59,7 @@ export class TaskSystem extends System {
             const randomTask = Random.fromArray(Object.values(Tasks));
 
             const taskList = new TaskList([
-                randomTask
+                { task: randomTask, complete: false }
             ]);
 
             entity.add(taskList);
@@ -71,8 +71,8 @@ export class TaskSystem extends System {
         const { tasks } = player.get(TaskList);
 
         for (let i = tasks.length - 1; i >= 0; i--) {
-            if (task === tasks[i]) {
-                tasks.splice(i, 1);
+            if (task === tasks[i].task) {
+                tasks[i].complete = true;
                 break;
             }
         }

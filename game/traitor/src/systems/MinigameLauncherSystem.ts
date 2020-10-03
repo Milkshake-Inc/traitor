@@ -13,11 +13,11 @@ import { TaskList } from "../components/TaskList";
 export class MinigameLauncherSystem extends System {
 
     protected inputs = useState(
-		this,
-		new Input({
-			interact: Controls.or(Keyboard.key(Key.Space), Keyboard.key(Key.E))
-		})
-	);
+        this,
+        new Input({
+            interact: Controls.or(Keyboard.key(Key.Space), Keyboard.key(Key.E))
+        })
+    );
 
     protected queries = useQueries(this, {
         player: all(Transform, LocalPlayer),
@@ -29,7 +29,7 @@ export class MinigameLauncherSystem extends System {
     update(dt: number) {
         const player = this.queries.player.first;
 
-        if(!player || !player.has(TaskList)) return;
+        if (!player || !player.has(TaskList)) return;
 
         const { position } = player.get(Transform);
         const { tasks } = player.get(TaskList);
@@ -40,9 +40,11 @@ export class MinigameLauncherSystem extends System {
             const transform = launcher.get(Transform)
             const { minigame, task, distance } = launcher.get(MinigameLauncher);
 
-            if (tasks.includes(task) && position.distance(transform) < distance) {
+            const hasTask = tasks.find((taskList) => taskList.task == task);
 
-                if(this.inputs.state.interact.once) {
+            if (hasTask && position.distance(transform) < distance) {
+
+                if (this.inputs.state.interact.once) {
                     this.events.emit(Events.LAUNCH_MINIGAME_EVENT, minigame, task);
                 }
             }
