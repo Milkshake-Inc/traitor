@@ -21,15 +21,14 @@ const DEFAULT_TASK_CONFIGURATION: TaskConfiguration = {
 export class TaskState {
     readonly configuration: TaskConfiguration;
 
-	constructor(configuration: TaskConfiguration) {
+    constructor(configuration: TaskConfiguration) {
         this.configuration = configuration;
-	}
+    }
 }
 
 export class TaskSystem extends System {
 
     protected state: TaskState;
-    protected playerTasksMap: Map<Entity, TaskList>
 
     protected queries = useQueries(this, {
         crewPlayers: all(Player, CrewRole),
@@ -42,13 +41,11 @@ export class TaskSystem extends System {
         super();
 
         const configuration = {
-			...DEFAULT_TASK_CONFIGURATION,
-			...customConfiguration
+            ...DEFAULT_TASK_CONFIGURATION,
+            ...customConfiguration
         };
 
         this.state = useState(this, new TaskState(configuration));
-
-        this.playerTasksMap = new Map();
 
         this.events.addListener(Events.ASSIGN_TASK_EVENT, () => this.assignTasks());
         this.events.addListener(Events.TASK_COMPLETED_EVENT, (player: Entity, task: Tasks) => this.taskCompleted(player, task));
@@ -64,7 +61,6 @@ export class TaskSystem extends System {
             const taskList = new TaskList([
                 randomTask
             ]);
-            this.playerTasksMap.set(entity, taskList);
 
             entity.add(taskList);
         });
@@ -72,8 +68,8 @@ export class TaskSystem extends System {
 
     // TODO: Update completed tasks
     private taskCompleted(player: Entity, task: Tasks) {
-        const { tasks } = this.playerTasksMap.get(player);
-        
+        const { tasks } = player.get(TaskList);
+
         for (let i = tasks.length - 1; i >= 0; i--) {
             if (task === tasks[i]) {
                 tasks.splice(i, 1);

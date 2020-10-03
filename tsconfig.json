@@ -4,16 +4,29 @@
 		"target": "ES6",
 		"baseUrl": ".",
 		"paths": {
-			"@ecs/*": ["./ecs/src/engine/*"]
+			"@ecs/*": [
+				"./ecs/src/engine/*"
+			]
 		},
-		"lib": ["es2015", "ES2019", "DOM", "ES7"],
+		"lib": [
+			"es2015",
+			"ES2019",
+			"DOM",
+			"ES7"
+		],
 		"moduleResolution": "Node",
 		"esModuleInterop": true,
 		"jsx": "react",
 		"jsxFactory": "h",
-		"allowSyntheticDefaultImports": true
+		"allowSyntheticDefaultImports": true,
+		"sourceMap": true
 	},
-	"include": ["./game/", "./ecs/"],
-	"exclude": ["node_modules", "test"]
-
+	"include": [
+		"./game/",
+		"./ecs/"
+	],
+	"exclude": [
+		"node_modules",
+		"test"
+	]
 }

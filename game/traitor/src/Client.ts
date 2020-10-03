@@ -33,7 +33,7 @@ import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
 import { Events, Tasks } from './utils/Constants';
 import { TaskSystem } from './systems/TaskSystem';
-import Minigame from './spaces/Minigame';
+import BaseMinigameSpace from './spaces/BaseMinigameSpace';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -68,7 +68,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new RoleSystem());
 		this.addSystem(new MinigameLauncherSystem());
-		
+
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
 		this.addSystem(new PlayerMaskSystems());
@@ -188,12 +188,12 @@ console.log('🎉 Client');
 
 const events = useSimpleEvents();
 
-events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Minigame, task: Tasks) => {
+events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: BaseMinigameSpace, task: Tasks) => {
 	console.log(`Task to complete: ${Tasks[task]}`);
 	minigame.task = task;
 	minigame.open();
 })
 
-events.on(Events.CLOSE_MINIGAME_EVENT, (minigame: Minigame) => {
+events.on(Events.CLOSE_MINIGAME_EVENT, (minigame: BaseMinigameSpace) => {
 	minigame.close();
 });
