@@ -71,7 +71,7 @@ export class RoleSystem extends System {
         this.state = useState(this, new RoleState(configuration));
 
         const events = useSimpleEvents();
-        events.addListener(Events.ASSIGN_ROLE_AND_TASK_EVENT, this.assignRoles.bind(this));
+        events.addListener(Events.ASSIGN_ROLE_EVENT, this.assignRoles.bind(this));
     }
 
     private assignRoles() {

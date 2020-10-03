@@ -31,20 +31,19 @@ export class MinigameLauncherSystem extends System {
 
         if(!player || !player.has(TaskList)) return;
 
-        const playerTransform = player.get(Transform);
-        const tasks = player.get(TaskList);
+        const { position } = player.get(Transform);
+        const { tasks } = player.get(TaskList);
 
         // This could be sped up with a quad tree like system. Find which quad the player is in and if any launchers are also in the quad.
         // Saying which "room" the player is in as each quad, would also allow a map like system like in Among Us and it could stop players interacting through walls.
         for (const launcher of this.queries.launchers) {
             const transform = launcher.get(Transform)
-            const minigameLauncher = launcher.get(MinigameLauncher)
+            const { minigame, task, distance } = launcher.get(MinigameLauncher);
 
-            if (tasks.hasIncompleteTask(minigameLauncher.minigame) && playerTransform.position.distance(transform) < 120) {
+            if (tasks.includes(task) && position.distance(transform) < distance) {
 
                 if(this.inputs.state.interact.once) {
-                    const { minigame } = launcher.get(MinigameLauncher)
-                    this.events.emit(Events.LAUNCH_MINIGAME_EVENT, minigame);
+                    this.events.emit(Events.LAUNCH_MINIGAME_EVENT, minigame, task);
                 }
             }
         }

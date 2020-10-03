@@ -33,6 +33,7 @@ import { PolygonFile } from './utils/PolygonFile';
 import { convertToPolygonShape } from './utils/PolygonUtils';
 import { Events, Tasks } from './utils/Constants';
 import { TaskSystem } from './systems/TaskSystem';
+import Minigame from './spaces/Minigame';
 
 export const Assets = {
 	Player: 'assets/player.json',
@@ -67,7 +68,7 @@ export class ClientTraitor extends Space {
 		this.addSystem(new ArcadeCollisionSystem());
 		this.addSystem(new RoleSystem());
 		this.addSystem(new MinigameLauncherSystem());
-
+		
 		this.addSystem(new BasicLightingSystem());
 		this.addSystem(new PlayerNamePlateSystems());
 		this.addSystem(new PlayerMaskSystems());
@@ -122,7 +123,11 @@ export class ClientTraitor extends Space {
 		interactiveSprite1.anchor.set(0.5);
 		interactiveItem1.add(interactiveSprite1);
 		interactiveItem1.add(Transform, { position: new Vector3(500, 600) });
-		interactiveItem1.add(new MinigameLauncher(Tasks.BUTTON_PRESS));
+		interactiveItem1.add(MinigameLauncher, {
+			minigame: new ButtonMinigame(engine),
+			task: Tasks.BUTTON_PRESS,
+			distance: 120
+		});
 
 		const interactiveItem2 = new Entity();
 		const interactiveSprite2 = Sprite.from(Assets.Parrot);
@@ -133,13 +138,18 @@ export class ClientTraitor extends Space {
 			position: new Vector3(300, 300),
 			scale: new Vector3(0.1, 0.1)
 		});
-		interactiveItem2.add(new MinigameLauncher(Tasks.FEED_POLY));
+		interactiveItem2.add(MinigameLauncher, {
+			minigame: new ButtonMinigame(engine),
+			task: Tasks.FEED_POLY,
+			distance: 60
+		});
 
 		this.addEntities(ship, interactiveItem1, interactiveItem2, player);
 
 		setTimeout(() => {
 			const event = useSimpleEvents();
-			event.emit(Events.ASSIGN_ROLE_AND_TASK_EVENT);
+			event.emit(Events.ASSIGN_ROLE_EVENT);
+			event.emit(Events.ASSIGN_TASK_EVENT);
 		}, 2000);
 	}
 }
@@ -176,17 +186,14 @@ setTimeout(() => {
 new ClientTraitor(engine, true);
 console.log('🎉 Client');
 
-
-// This logic should be moved to system - Maybe move to MinigameLauncher?
-const buttonMinigame = new ButtonMinigame(engine);
-
 const events = useSimpleEvents();
 
-events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Tasks) => {
-	console.log(`Wanting to open: ${Tasks[minigame]}`);
-	buttonMinigame.open();
+events.on(Events.LAUNCH_MINIGAME_EVENT, (minigame: Minigame, task: Tasks) => {
+	console.log(`Task to complete: ${Tasks[task]}`);
+	minigame.task = task;
+	minigame.open();
 })
 
-events.on(Events.CLOSE_MINIGAME_EVENT, () => {
-	buttonMinigame.close();
-})
+events.on(Events.CLOSE_MINIGAME_EVENT, (minigame: Minigame) => {
+	minigame.close();
+});
