@@ -11,12 +11,12 @@ import { all } from "@ecs/core/Query"
 import { LocalPlayer } from "../components/LocalPlayer"
 import { TaskList } from "../components/TaskList"
 import { Events, Tasks } from "../utils/Constants"
-import Minigame from "./Minigame"
+import BaseMinigameSpace from "./BaseMinigameSpace"
 
 export const LAUNCH_MINIGAME_EVENT = "LAUNCH_MINIGAME";
 export const CLOSE_MINIGAME_EVENT = "CLOSE_MINIGAME";
 
-export class ButtonMinigame extends Minigame {
+export class ButtonMinigame extends BaseMinigameSpace {
 	protected events = useSimpleEvents();
 
 	constructor(engine: Engine) {
@@ -30,8 +30,8 @@ export class ButtonMinigame extends Minigame {
 
 		const background = new Entity();
 		background.add(Transform, {
-				x: 1280 / 2,
-				y: 720 / 2,
+			x: 1280 / 2,
+			y: 720 / 2,
 		});
 		background.add(UIDisplayObject);
 
@@ -56,7 +56,7 @@ export class ButtonMinigame extends Minigame {
 		buttonGraphics.on("click", () => {
 			const localPlayer = query.localPlayer.first;
 			this.events.emit(Events.TASK_COMPLETED_EVENT, localPlayer, this.taskToComplete)
-			
+
 			this.events.emit(CLOSE_MINIGAME_EVENT, this);
 		});
 		button.add(buttonGraphics);

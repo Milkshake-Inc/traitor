@@ -1,7 +1,7 @@
 import Space from "@ecs/plugins/space/Space";
 import { Tasks } from "../utils/Constants";
 
-export default class Minigame extends Space {
+export default abstract class BaseMinigameSpace extends Space {
 
     protected taskToComplete: Tasks;
 
