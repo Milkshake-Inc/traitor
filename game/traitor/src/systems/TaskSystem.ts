@@ -64,6 +64,8 @@ export class TaskSystem extends System {
 
             entity.add(taskList);
         });
+
+        console.log(`📒 Asigned tasks`);
     }
 
     // TODO: Update completed tasks

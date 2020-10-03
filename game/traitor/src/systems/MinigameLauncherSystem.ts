@@ -40,7 +40,7 @@ export class MinigameLauncherSystem extends System {
             const transform = launcher.get(Transform)
             const { minigame, task, distance } = launcher.get(MinigameLauncher);
 
-            const hasTask = tasks.find((taskList) => taskList.task == task);
+            const hasTask = tasks.find((taskList) => taskList.task == task && !taskList.complete);
 
             if (hasTask && position.distance(transform) < distance) {
 
