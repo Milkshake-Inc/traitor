@@ -4,7 +4,7 @@ import { useQueries } from '@ecs/core/helpers';
 import { all } from '@ecs/core/Query';
 import { System } from '@ecs/core/System';
 import Transform from '@ecs/plugins/math/Transform';
-import { Point, Text } from 'pixi.js';
+import { Point, Text, TextStyle } from 'pixi.js';
 import { NamePlate } from '../components/NamePlate';
 import { Player } from '../components/Player';
 import { getRoleFromEntity, getRoleText, getRoleTextColor } from './RoleSystem';
@@ -28,7 +28,7 @@ export class PlayerNamePlateSystems extends System {
 
 	update(deltaTime: number) {
 		this.queries.players.forEach(entity => {
-			if(!this.namePlates.has(entity)) {
+			if (!this.namePlates.has(entity)) {
 				// entity.add(NamePlate);
 
 				const namePlateEntity = new Entity();
@@ -39,8 +39,11 @@ export class PlayerNamePlateSystems extends System {
 				namePlateEntity.add(Text, {
 					style: {
 						fontSize: 16,
-						align: 'center'
-					},
+						align: 'center',
+						fontFamily: 'Quicksand',
+						dropShadow: true,
+						dropShadowDistance: 2,
+					} as TextStyle,
 					resolution: devicePixelRatio,
 					anchor: new Point(0.5),
 				});
@@ -58,13 +61,12 @@ export class PlayerNamePlateSystems extends System {
 			const namePlateText = namePlate.get(Text);
 
 			namePlateTransfrom.position.x = entity.get(Transform).position.x;
-			namePlateTransfrom.position.y = entity.get(Transform).position.y + 20;
+			namePlateTransfrom.position.y = entity.get(Transform).position.y + 30;
 
 			const role = getRoleFromEntity(entity);
-			const roleName = getRoleText(role);
 			const roleColor = getRoleTextColor(role);
 
-			namePlateText.text = roleName ? `${name}\n[${roleName}]` : name;
+			namePlateText.text = name;
 			namePlateText.style.fill = roleColor;
 		});
 	}

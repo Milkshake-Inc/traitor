@@ -23,30 +23,30 @@ const DEFAULT_ROLE_CONFIGURATION: RoleConfiguration = {
 export class RoleState {
     readonly configuration: RoleConfiguration;
 
-	constructor(configuration: RoleConfiguration) {
+    constructor(configuration: RoleConfiguration) {
         this.configuration = configuration;
-	}
+    }
 }
 
 export const getRoleFromEntity = (entity: Entity): CrewRole | TraitorRole | JesterRole | null => {
-    if(entity.has(CrewRole)) return entity.get(CrewRole);
-    if(entity.has(TraitorRole)) return entity.get(TraitorRole);
-    if(entity.has(JesterRole)) return entity.get(JesterRole);
+    if (entity.has(CrewRole)) return entity.get(CrewRole);
+    if (entity.has(TraitorRole)) return entity.get(TraitorRole);
+    if (entity.has(JesterRole)) return entity.get(JesterRole);
 
     return null;
 }
 
 export const getRoleText = (entity: CrewRole | TraitorRole | JesterRole | null) => {
-    if(entity instanceof CrewRole) return "Crew";
-    if(entity instanceof TraitorRole) return "Traitor";
-    if(entity instanceof JesterRole) return "Jester";
+    if (entity instanceof CrewRole) return "Crew";
+    if (entity instanceof TraitorRole) return "Traitor";
+    if (entity instanceof JesterRole) return "Jester";
 
     return "";
 }
 
 export const getRoleTextColor = (entity: CrewRole | TraitorRole | JesterRole | null) => {
-    if(entity instanceof TraitorRole) return Color.Red;
-    if(entity instanceof JesterRole) return Color.Blue;
+    if (entity instanceof TraitorRole) return 0xEA4335;
+    if (entity instanceof JesterRole) return 0x3BABFD;
 
     return Color.White;
 }
@@ -56,7 +56,7 @@ export class RoleSystem extends System {
     protected state: RoleState;
 
     protected queries = useQueries(this, {
-        playersWithoutRole: [ all(Player), not(TraitorRole, JesterRole, CrewRole) ]
+        playersWithoutRole: [all(Player), not(TraitorRole, JesterRole, CrewRole)]
     })
 
     constructor(customConfiguration?: Partial<RoleConfiguration>) {
@@ -64,8 +64,8 @@ export class RoleSystem extends System {
         super();
 
         const configuration = {
-			...DEFAULT_ROLE_CONFIGURATION,
-			...customConfiguration
+            ...DEFAULT_ROLE_CONFIGURATION,
+            ...customConfiguration
         };
 
         this.state = useState(this, new RoleState(configuration));
